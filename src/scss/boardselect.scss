@@ -1,0 +1,86 @@
+.dashboard {
+    .show-dash {
+
+        .board-select {
+            width: 100%;
+            height: calc(100vh - 30px);
+            background: linear-gradient(to bottom, #d9cd6c71, #2471e468);
+            * { 
+                color: #fff;
+            }
+            .headline {
+
+                padding: 10px;
+                background: #3d7eba62;
+
+                .shared-button {
+
+                    padding: 5px 7px;
+                    border: 0px;
+                    background: #fff;
+                    color: #000;
+                    outline: none;
+                    border-radius: 5px;
+                    font-size: 15px;
+                }
+            }
+
+            .list-of-tasks {
+                padding: 20px;
+                .task {
+                    border-radius: 10px;
+                    width: 250px;
+                    min-height:  80px;
+                    background: #353232cf;
+                    padding: 7.5px;
+                }
+
+                input {
+                    cursor: pointer;
+                    width: 100%;
+                    background: none;
+                    outline: none;
+                    color: #fff;
+                    padding: 5px;
+                    &::placeholder {
+                        color: #fff;
+                    }
+                    &:focus {
+                        border: 0.5px solid #fff;
+                        background: #404040;
+                    }
+                }
+
+                .td-1, .card-btn {
+                    padding: 5px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 7.5px;
+                    svg {
+                        cursor: pointer;
+                    }
+                }
+
+                .card-btn {
+                    justify-content: flex-start;
+                    padding: 5px;
+                    margin: 5px;
+                    width: calc(100% - 10px);
+                    height: calc(100% - 10px);
+                    cursor: pointer;
+                    border-radius: 7.5px;
+                    transition: all 0.75s cubic-bezier(0.39, 0.575, 0.565, 1);
+                    &:hover {
+                        background: #b0b0b06a;
+                    }
+
+                    h4 {
+                        font-size: 13px;
+                    }
+                }
+            }
+
+        }
+    }
+}
