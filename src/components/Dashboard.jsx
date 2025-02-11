@@ -65,6 +65,7 @@ const Dashboard = ({  }) => {
       }
       
 
+    const filteredBoards = userBoards?.filter(board => board.email === currentUser.email);
 
 
     return (
@@ -124,13 +125,13 @@ const Dashboard = ({  }) => {
                                         <div className="create-ttl">
                                             <h5> Create Board </h5>
                                         </div>
-                                        <img className='main-img' src="/img/AMIKI.png" alt="Yes" />
+                                        <img className='main-img' src="/img/btc5.jpg" alt="Yes" />
 
                                         <div className="collection-img flex items-center justify-center gap-1">
-                                            <img src="/img/AMIKI.png" alt="" />
-                                            <img src="/img/AMIKI.png" alt="" />
-                                            <img src="/img/AMIKI.png" alt="" />
-                                            <img src="/img/AMIKI.png" alt="" />
+                                            <img src="/img/btc5.jpg" alt="" />
+                                            <img src="/img/btc5.jpg" alt="" />
+                                            <img src="/img/btc5.jpg" alt="" />
+                                            <img src="/img/btc5.jpg" alt="" />
                                         </div>
 
                                         <input
@@ -164,14 +165,11 @@ const Dashboard = ({  }) => {
                             }
 
                             <div className="dropdown-ulx" ref={boardsDropdownRef}>
-
-                                {userBoards?.map((board, index) => { 
-                                    console.log(index)
-                                    
+                                {filteredBoards?.map((board, index) => {                                     
                                     return (
                                     <Link 
                                         key={index}
-                                        to={`/dashboard/${board?.boardTitle}`}
+                                        to={`/dashboard/${board?.id}`}
                                         className='boardtitles'
 
                                         onClick={handleShowBoardClick}
@@ -204,7 +202,6 @@ const Dashboard = ({  }) => {
                     <Board tempboard={tempboard} setTempBoard={setTempBoard} ></Board>
                 }
 
-                
                 <Outlet />
 
             </div>

@@ -24,6 +24,7 @@ const DashboardProvider = ({ children }) => {
     useEffect(() => {
         const getBoards = async () => {
             const boards = await fetchUserBoards();
+            console.log(boards)
             setUserBoards(boards); // Set fetched boards to state
         };
 
@@ -37,6 +38,8 @@ const DashboardProvider = ({ children }) => {
             await saveUserBoardData(user, board);
             // After saving, fetch the updated boards
             const boards = await fetchUserBoards();
+
+            console.log(boards)
             setUserBoards(boards); // Update the boards state
         } catch (error) {
             throw new Error(error);

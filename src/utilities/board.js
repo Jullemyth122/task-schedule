@@ -11,6 +11,11 @@ const saveUserBoardData = async (user, board) => {
             boardTitle: board.boardTitle,
             boardVisibility: board.boardVisibility,
             boardTemplate: board.boardTemplate,
+            taskList: [
+                { "To Do List": [] },
+                { "Working": [] },
+                { "Done": [] }
+            ],
             createdAt: new Date(),
         });
         console.log("User data saved to Firestore");
@@ -22,11 +27,14 @@ const saveUserBoardData = async (user, board) => {
 // Export the saveUserData function
 export { saveUserBoardData };
 
-// Function to fetch all boards from Firestore
+// Function to fetch all boards from Firestore (🟢 Now includes document ID)
 const fetchUserBoards = async () => {
     try {
         const querySnapshot = await getDocs(collection(db, "boards"));
-        const boards = querySnapshot.docs.map(doc => doc.data());
+        const boards = querySnapshot.docs.map(doc => ({
+            id: doc.id, // 🟢 Include Firestore document ID
+            ...doc.data()
+        }));
         return boards;
     } catch (error) {
         console.error("Error fetching boards: ", error);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';  // Use useNavigate from React Router v6
-import { getAuth, signOut } from 'firebase/auth'; // Import Firebase auth
+import {  getAuth, signOut } from 'firebase/auth'; // Import Firebase auth
 
 const Navigation = () => {
     const [user, setUser] = useState(null); // State to store user data
