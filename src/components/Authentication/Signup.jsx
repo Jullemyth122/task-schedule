@@ -6,10 +6,13 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithP
 import { saveUserData } from '../../utilities/account';  // Import saveUserData function
 import { updateProfile } from "firebase/auth"; // Import updateProfile from Firebase
 import { useAuth } from '../../context/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 
 
 const Signup = () => {
+
+    const navigate = useNavigate()
 
     const {  
         currentUser,
@@ -74,7 +77,25 @@ const Signup = () => {
 
     },[])
     
+
+    const handleRegister = async(e) => {
+        await handleSignup(e)
+    }
     
+    const handleLoggingIn = async(e) => {
+        await handleLogin(e)
+        navigate('/dashboard') 
+    }
+    
+    const handleLogginGoogle = async(e) => {
+        await handleGoogleLogin(e)
+        navigate('/dashboard') 
+    }
+    
+    const handleLogginFacebook = async(e) => {
+        await handleFacebookLogin(e)
+        navigate('/dashboard') 
+    }
     
     
     
@@ -113,7 +134,7 @@ const Signup = () => {
                                 <h1 className='signInButton' onClick={e => toggleView("SignIn")}> Sign in </h1>
                             </div>
                             <div className="slider" ref={containerRef}>
-                                <form className="label-inputs" onSubmit={handleSignup}>
+                                <form className="label-inputs" onSubmit={handleRegister}>
                                     <div className="label-input">
                                         <label> Username </label>
                                         <input
@@ -150,7 +171,7 @@ const Signup = () => {
 
                                     </div>
                                 </form>
-                                <form className="label-inputs" onSubmit={handleLogin}>
+                                <form className="label-inputs" onSubmit={handleLoggingIn}>
                                     <div className="label-input">
                                         <label> Email </label>
                                         <input
@@ -172,7 +193,7 @@ const Signup = () => {
                                     <h2 className='separate  w-full text-center'> OR </h2>
 
                                     <div className="connect flex items-center justify-evenly">
-                                        <button className="button-sign google" onClick={handleGoogleLogin}>
+                                        <button className="button-sign google" onClick={handleLogginGoogle}>
                                             <h5 className='flex items-center justify-evenly gap-3'> 
                                                 Sign in with
                                                 <svg width="35" height="35" viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -184,7 +205,7 @@ const Signup = () => {
                                                 </svg>
                                             </h5>
                                         </button>
-                                        <button className="button-sign fbook" onClick={handleFacebookLogin}>
+                                        <button className="button-sign fbook" onClick={handleLogginFacebook}>
                                             <h5 className='flex items-center justify-evenly gap-3'> 
                                                 Sign in with
                                                 <svg width="33" height="33" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">

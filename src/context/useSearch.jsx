@@ -1,45 +1,40 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { fetchUserBoards } from "../utilities/board"; // Fetching user boards
+import { fetchUserBoards } from "../utilities/board";
 import { useDashboardFunc } from "./useDashboardFunc";
 import { useAuth } from "./useAuth";
+import BST from "../utilities/BST"; // ✅ Import BST
 
 const SearchFuncContext = createContext();
-
 export const useSearch = () => useContext(SearchFuncContext);
 
 const SearchProvider = ({ children }) => {
-
-
-    const { userBoards } = useDashboardFunc()
-    const { currentUser } = useAuth()
+    const { userBoards } = useDashboardFunc();
+    const { currentUser } = useAuth();
 
     const [search, setSearch] = useState("");
     const [filteredBoards, setFilteredBoards] = useState([]);
-    // const [userBoards, setUserBoards] = useState([]);
 
-
-
+    // Initialize BST
+    const bst = new BST();
 
     useEffect(() => {
-        // First, filter boards that belong to the current user
-        const boardsForUser = userBoards.filter(
-        board => board.email === currentUser?.email
-        );
+        // Filter boards for the current user
+        const boardsForUser = userBoards.filter(board => board.email === currentUser?.email);
+        
+        // Insert all boards into BST
+        boardsForUser.forEach(board => bst.insert(board.boardTitle.toLowerCase(), board));
 
         const delayDebounce = setTimeout(() => {
-        if (search.trim() === "") {
-            setFilteredBoards(boardsForUser);
-        } else {
-            const filtered = boardsForUser.filter(board =>
-            board.boardTitle.toLowerCase().includes(search.toLowerCase())
-            );
-            setFilteredBoards(filtered);
-        }
-        }, 300); // Adjust debounce time as needed
+            if (search.trim() === "") {
+                setFilteredBoards(boardsForUser);
+            } else {
+                const filtered = bst.search(search);
+                setFilteredBoards(filtered);
+            }
+        }, 300); // Debounce to optimize performance
 
         return () => clearTimeout(delayDebounce);
     }, [search, userBoards, currentUser]);
-
 
     const value = {
         search,
@@ -48,11 +43,7 @@ const SearchProvider = ({ children }) => {
         userBoards,
     };
 
-    return (
-        <SearchFuncContext.Provider value={value}>
-            {children}
-        </SearchFuncContext.Provider>
-    );
+    return <SearchFuncContext.Provider value={value}>{children}</SearchFuncContext.Provider>;
 };
 
 export default SearchProvider;

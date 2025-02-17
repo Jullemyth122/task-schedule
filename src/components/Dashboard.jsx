@@ -146,7 +146,7 @@ const Dashboard = ({  }) => {
                                             value={boardAttr.boardVisibility}
                                             onChange={e => setBoardAttr(prevState => ({ ...prevState, boardVisibility: e.target.value }))}
                                             >
-                                                <option value="Privacy"> Privacy </option>
+                                                <option value="Private"> Private </option>
                                                 <option value="Workspace"> Workspace </option>
                                                 <option value="Public"> Public </option>
                                             </select>
