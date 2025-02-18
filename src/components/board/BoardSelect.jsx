@@ -14,14 +14,51 @@ const BoardSelect = () => {
     const selectedBoard = userBoards.find((board) => board?.id === itemId);
     const [activeCategory, setActiveCategory] = useState({});
     const [newTask, setNewTask] = useState({});
-
-    console.log(accBST)
-    // State to track which task card is expanded
-    // The key can be a combination of category title and index
+    const [editedCategoryTitles, setEditedCategoryTitles] = useState({});
     const [expandedTaskItems, setExpandedTaskItems] = useState({});
+
+    // State for error messages when adding new cards to a category
+    const [taskErrors, setTaskErrors] = useState({});
+    // New state for creating a new category (taskList item)
+    const [newCategory, setNewCategory] = useState("");
+    // New state for errors when adding a new category (board-level task limit)
+    const [newCategoryError, setNewCategoryError] = useState("");
 
     const toggleCategory = (category) => {
         setActiveCategory((prev) => ({ ...prev, [category]: !prev[category] }));
+    };
+
+    const displayedCategories = selectedBoard
+        ? selectedBoard.taskList.slice(0, accBST.taskLimits)
+        : [];
+
+
+    const handleCategoryTitleUpdate = async (categoryIndex, newTitle) => {
+        if (!selectedBoard) return;
+
+        const updatedTaskList = selectedBoard.taskList.map((task, idx) => {
+            if (idx === categoryIndex) {
+                return { ...task, title: newTitle };
+            }
+            return task;
+        });
+
+        try {
+            const boardRef = doc(db, "boards", selectedBoard.id);
+            await updateDoc(boardRef, { taskList: updatedTaskList });
+            setUserBoards((prevBoards) =>
+                prevBoards.map((board) =>
+                    board.id === selectedBoard.id ? { ...board, taskList: updatedTaskList } : board
+                )
+            );
+            setEditedCategoryTitles((prev) => {
+                const newState = { ...prev };
+                delete newState[categoryIndex];
+                return newState;
+            });
+        } catch (error) {
+            console.error("Error updating category title:", error);
+        }
     };
 
     const handleCreateTask = async (categoryTitle) => {
@@ -29,6 +66,28 @@ const BoardSelect = () => {
 
         const updatedTaskList = selectedBoard.taskList.map((task) => {
             if (task.title === categoryTitle) {
+                // Check if the current number of tasks is at the limit (using cardLimits)
+                if (task.tasks.length >= accBST.cardLimits) {
+                    setTaskErrors((prev) => ({
+                        ...prev,
+                        [categoryTitle]:
+                            "You have reached the maximum number of tasks for this category."
+                    }));
+                    // Clear the error after 3 seconds
+                    setTimeout(() => {
+                        setTaskErrors((prev) => {
+                            const newState = { ...prev };
+                            delete newState[categoryTitle];
+                            return newState;
+                        });
+                    }, 3000);
+                    return task;
+                }
+                // Clear any previous error if below limit
+                setTaskErrors((prev) => ({
+                    ...prev,
+                    [categoryTitle]: ""
+                }));
                 return {
                     ...task,
                     tasks: [...task.tasks, newTask[categoryTitle]]
@@ -40,17 +99,48 @@ const BoardSelect = () => {
         try {
             const boardRef = doc(db, "boards", selectedBoard.id);
             await updateDoc(boardRef, { taskList: updatedTaskList });
-
             setUserBoards((prevBoards) =>
                 prevBoards.map((board) =>
                     board.id === itemId ? { ...board, taskList: updatedTaskList } : board
                 )
             );
-
             setNewTask((prev) => ({ ...prev, [categoryTitle]: "" }));
             setActiveCategory({}); // Reset active categories
         } catch (error) {
             console.error("Error adding task: ", error);
+        }
+    };
+
+    // NEW: Function to add a new category
+    const handleCreateCategory = async () => {
+        if (!newCategory.trim() || !selectedBoard) return;
+        // Check board's current category count against taskLimits (board limit)
+        if (selectedBoard.taskList.length >= accBST.taskLimits) {
+            setNewCategoryError("You have reached the maximum number of categories for this board.");
+            setTimeout(() => {
+                setNewCategoryError("");
+            }, 3000);
+            return;
+        }
+        // New category object with empty arrays for tasks, taggings, and links
+        const newCategoryObj = {
+            title: newCategory,
+            tasks: [],
+            taggings: [],
+            links: []
+        };
+        const updatedTaskList = [...selectedBoard.taskList, newCategoryObj];
+        try {
+            const boardRef = doc(db, "boards", selectedBoard.id);
+            await updateDoc(boardRef, { taskList: updatedTaskList });
+            setUserBoards((prevBoards) =>
+                prevBoards.map((board) =>
+                    board.id === selectedBoard.id ? { ...board, taskList: updatedTaskList } : board
+                )
+            );
+            setNewCategory("");
+        } catch (error) {
+            console.error("Error creating new category:", error);
         }
     };
 
@@ -75,14 +165,40 @@ const BoardSelect = () => {
 
             <div className="list-of-tasks flex items-start justify-start gap-2 flex-wrap">
                 {selectedBoard &&
-                    selectedBoard.taskList.map((task, categoryIndex) => {
-                    const categoryTitle = task.title;
-                    const taskItems = task.tasks || [];
+                    displayedCategories.map((task, displayedIndex) => {
+                    // Get the original index of this category (if needed)
+                    // For simplicity, we assume the slice preserves order from the full taskList.
+                    const currentCategoryTitle =
+                        editedCategoryTitles[displayedIndex] !== undefined
+                            ? editedCategoryTitles[displayedIndex]
+                            : task.title;
+                    // Limit tasks to the card limit
+                    const displayTaskItems = task.tasks.slice(0, accBST.cardLimits);
+
 
                     return (
-                        <div className="task" key={categoryIndex}>
+                        <div className="task" key={displayedIndex}>
                             <div className="td-1">
-                                <input type="text" defaultValue={categoryTitle} readOnly />
+                                <input
+                                    type="text"
+                                    value={currentCategoryTitle}
+                                    // Update the temporary state as the user types
+                                    onChange={(e) =>
+                                        setEditedCategoryTitles((prev) => ({
+                                            ...prev,
+                                            [displayedIndex]: e.target.value
+                                        }))
+                                    }
+                                    // On Enter, update Firestore and local state
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            handleCategoryTitleUpdate(
+                                                displayedIndex,
+                                                currentCategoryTitle
+                                            );
+                                        }
+                                    }}
+                                />
                                 <svg
                                     width="17"
                                     height="5"
@@ -95,9 +211,9 @@ const BoardSelect = () => {
                             </div>
 
                             <div className="card-sect grid grid-cols-1 gap-2">
-                                {taskItems.map((taskItem, i) => {
+                                {displayTaskItems.map((taskItem, i) => {
                                     // Create a unique key for each task card
-                                    const cardKey = `${categoryTitle}-${i}`;
+                                    const cardKey = `${currentCategoryTitle}-${i}`;
                                     const isExpanded = expandedTaskItems[cardKey] || false;
                                     return (
                                         <div
@@ -147,10 +263,16 @@ const BoardSelect = () => {
                                     );
                                 })}
                             </div>
-                            {!activeCategory[categoryTitle] && (
+                            {taskErrors[currentCategoryTitle] && (
+                                <div className="error-message flex items-center justify-center" style={{ color: "red", fontSize: "13px"}}>
+                                    {taskErrors[currentCategoryTitle]}
+                                </div>
+                            )}
+                            
+                            {!activeCategory[currentCategoryTitle] && (
                                 <div
                                     className="card-btn"
-                                    onClick={() => toggleCategory(categoryTitle)}
+                                    onClick={() => toggleCategory(currentCategoryTitle)}
                                 >
                                     <svg
                                         width="12"
@@ -164,30 +286,30 @@ const BoardSelect = () => {
                                     <h4>Add Card</h4>
                                 </div>
                             )}
-                            {activeCategory[categoryTitle] && (
+                            {activeCategory[currentCategoryTitle] && (
                                 <div className="rd-cd-btn">
                                     <input
                                         type="text"
                                         placeholder="Enter a title"
-                                        value={newTask[categoryTitle] || ""}
+                                        value={newTask[currentCategoryTitle] || ""}
                                         onChange={(e) =>
                                             setNewTask((prev) => ({
                                                 ...prev,
-                                                [categoryTitle]: e.target.value
+                                                [currentCategoryTitle]: e.target.value
                                             }))
                                         }
                                     />
                                     <div className="btn-create-cd">
                                         <div
                                             className="btn"
-                                            onClick={() => handleCreateTask(categoryTitle)}
+                                            onClick={() => handleCreateTask(currentCategoryTitle)}
                                         >
                                             Add Card
                                         </div>
                                         <h5
                                             className="cursor-pointer hover:bg-gray-400"
                                             onClick={() =>
-                                                toggleCategory(categoryTitle)
+                                                toggleCategory(currentCategoryTitle)
                                             } // close input when clicking "X"
                                         >
                                             X
@@ -198,9 +320,20 @@ const BoardSelect = () => {
                         </div>
                     );
                 })}
+
                 <div className="task taskAdder">
                     <div className="td-1">
-                        <input type="text" name="" id="" placeholder="Create New Task"/>
+                        <input
+                            type="text"
+                            placeholder="Create New Category"
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    handleCreateCategory();
+                                }
+                            }}
+                        />
                         <svg
                             width="12"
                             height="12"
@@ -211,7 +344,16 @@ const BoardSelect = () => {
                             <path d="M5.5 6.5H0V5.5H5.5V0H6.5V5.5H12V6.5H6.5V12H5.5V6.5Z" fill="#000"/>
                         </svg>
                     </div>
+                    {newCategoryError && (
+                        <div
+                            className="error-message flex items-center justify-center"
+                            style={{ color: "red", fontSize: "13px", marginTop: "0.5rem" }}
+                        >
+                            {newCategoryError}
+                        </div>
+                    )}
                 </div>
+
             </div>
         </div>
     );

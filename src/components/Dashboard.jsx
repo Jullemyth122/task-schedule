@@ -17,6 +17,9 @@ const Dashboard = ({  }) => {
   
     const { currentUser  } = useAuth()
 
+    const [expandedCreate, setExpandedCreate] = useState();
+
+
     const { 
         IsCreateBoard, setIsCreateBoard,
         boardAttr,setBoardAttr,
@@ -121,7 +124,15 @@ const Dashboard = ({  }) => {
 
                             {IsCreateBoard && 
                                 <>
-                                    <div className="board_create-show">
+                                    <div className="board_create-show"
+                                        tabIndex={0} // Make the div focusable
+                                        onBlur={(e) => {
+                                        // If the new focused element is not inside this container, close it
+                                        if (!e.currentTarget.contains(e.relatedTarget)) {
+                                            setIsCreateBoard(false);
+                                        }
+                                        }}
+                                    >
                                         <div className="create-ttl">
                                             <h5> Create Board </h5>
                                         </div>
