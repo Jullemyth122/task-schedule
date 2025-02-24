@@ -18,10 +18,10 @@ const SearchProvider = ({ children }) => {
     const bst = new BST();
 
     useEffect(() => {
-        // Filter boards for the current user
+        // Filter data for the current user
         const boardsForUser = userBoards.filter(board => board.email === currentUser?.email);
         
-        // Insert all boards into BST
+        // Insert all data into BST
         boardsForUser.forEach(board => bst.insert(board.boardTitle.toLowerCase(), board));
 
         const delayDebounce = setTimeout(() => {

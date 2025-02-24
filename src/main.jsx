@@ -5,6 +5,7 @@ import './index.css'
 import { AuthProvider } from './context/useAuth.jsx'
 import DashboardProvider from './context/useDashboardFunc.jsx'
 import SearchProvider from './context/useSearch.jsx'
+import './utilities/i18n.js'; // initialize i18n
 
 createRoot(document.getElementById('root')).render(
   <Fragment>

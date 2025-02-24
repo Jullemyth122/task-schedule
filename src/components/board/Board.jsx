@@ -6,8 +6,14 @@ import { useSearch } from '../../context/useSearch'
 const Board = ({ tempboard, setTempBoard }) => {
 
     
-    // const { userBoards } = useDashboardFunc()
-    const { userBoards,search, setSearch, filteredBoards } = useSearch();
+    const images = [
+        '/img/s1.jpg',
+        '/img/s2.jpg',
+        '/img/s3.jpg',
+        '/img/s4.jpg',
+        '/img/s5.jpg'
+    ];
+    const { search, setSearch, filteredBoards } = useSearch();
 
 
     return (
@@ -62,22 +68,24 @@ const Board = ({ tempboard, setTempBoard }) => {
                 <div className="list-items">
 
                     {filteredBoards.length > 0 ? (
-                        filteredBoards.map((board, index) => (
+                        filteredBoards.map((board, index) => { 
+                            const selectedImage = images[Math.floor(Math.random() * images.length)];
+                                
+                            return (
                             <div key={index} className="boarding-shift flex items-center justify-center relative">
                                 <Link
                                     to={`/dashboard/${board?.id}`}
                                     className="board-item"
                                 >
-                                    <img src="./img/rockets.jpg" alt="" className="bg-img-title" />
-                                    <p>{board.boardTitle}</p>
+                                    <img src={selectedImage} alt="Thumbnail" className="bg-img-title"/>
+                                    {/* <img src="./img/s1.jpg" alt="" className="bg-img-title" /> */}
+                                    <p className='text-white'>{board.boardTitle}</p>
                                 </Link>
                             </div>
-                        ))
+                        )})
                     ) : (
                         <p>No matching boards found.</p>
                     )}
-
-
                 </div>
             </div>
 

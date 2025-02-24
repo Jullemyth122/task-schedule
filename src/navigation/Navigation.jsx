@@ -1,34 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';  // Use useNavigate from React Router v6
 import {  getAuth, signOut } from 'firebase/auth'; // Import Firebase auth
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../utilities/firebase';
 
 const Navigation = () => {
-    const [user, setUser] = useState(null); // State to store user data
-    const navigate = useNavigate(); // useNavigate hook to navigate programmatically
-
+    const [user, setUser] = useState(null);
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifs, setShowNotifs] = useState(false);
+    const navigate = useNavigate();
+  
+    // Listen to Firebase auth state changes
     useEffect(() => {
-        console.log(user)
-        // Check if user is already logged in (Firebase Authentication persistence)
         const auth = getAuth();
         const unsubscribe = auth.onAuthStateChanged((currentUser) => {
             if (currentUser) {
-                setUser(currentUser); // Set the user data in state
+            setUser(currentUser);
             } else {
-                setUser(null); // No user is signed in
+            setUser(null);
             }
         });
-
-        return () => unsubscribe(); // Cleanup subscription on unmount
+        return () => unsubscribe();
     }, []);
-
+  
+    // Fetch notifications for the current user from their account document
+    useEffect(() => {
+        if (user) {
+            const fetchNotifications = async () => {
+                try {
+                    const docRef = doc(db, "account", user.uid);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        console.log(data)
+                        setNotifications(data.notifications || []);
+                    }
+                } catch (err) {
+                    console.error("Error fetching notifications:", err);
+                }
+            };
+            fetchNotifications();
+        }
+    }, [user]);
+  
     const handleLogout = async () => {
         try {
             const auth = getAuth();
-            await signOut(auth); // Sign out the user from Firebase
-            localStorage.removeItem("user"); // Remove user data from localStorage (if used)
-            navigate('/signup'); // Redirect to the login page using useNavigate
+            await signOut(auth);
+            localStorage.removeItem("user");
+            navigate('/signup');
         } catch (error) {
             console.error("Error logging out:", error.message);
+        }
+    };
+  
+    // Helper function to assign a color based on the notification status
+    const getColor = (status) => {
+        switch (status) {
+            case 'red':
+            return '#ff4d4d';
+            case 'orange':
+            return '#ffa500';
+            case 'green':
+            return '#28a745';
+            default:
+            return '#888';
         }
     };
 
@@ -62,8 +98,41 @@ const Navigation = () => {
                         <h5 className='text-white'> Settings </h5>
                     </Link>
                     {user ? 
-                        // If user is logged in, show their name and logout option
                         <>
+                        <div className='nav-link'>
+                            <svg className='cursor-pointer' width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.42846 2.00511C4.554453 1.85464 4.61659 1.66073 4.60129 1.46502C4.586 1.26931 4.49459 1.08739 4.34667 0.958325C4.19876 0.829259 4.00613 0.763332 3.81015 0.774696C3.61417 0.786061 3.43046 0.873812 3.29846 1.01911L2.00646 2.49911C1.27384 3.33868 0.859694 4.40908 0.836457 5.52311L0.779457 8.24211C0.777422 8.3406 0.794805 8.43853 0.830616 8.5303C0.866426 8.62208 0.919962 8.7059 0.988167 8.77698C1.05637 8.84806 1.13791 8.90502 1.22812 8.94459C1.31834 8.98416 1.41547 9.00558 1.51396 9.00761C1.61245 9.00965 1.71038 8.99226 1.80215 8.95645C1.89392 8.92064 1.97774 8.86711 2.04883 8.7989C2.11991 8.7307 2.17686 8.64916 2.21644 8.55894C2.25601 8.46873 2.27742 8.3716 2.27946 8.27311L2.33546 5.55511C2.3515 4.79284 2.63503 4.06047 3.13646 3.48611L4.42846 2.00511Z" fill="#fff"/>
+                            <path fillRule="evenodd" clipRule="evenodd" d="M4.23793 7.2918C4.30508 6.22193 4.77745 5.21788 5.55885 4.48403C6.34025 3.75019 7.37196 3.34173 8.44393 3.3418H9.00093V2.5918C9.00093 2.32658 9.10628 2.07223 9.29382 1.88469C9.48136 1.69715 9.73571 1.5918 10.0009 1.5918C10.2661 1.5918 10.5205 1.69715 10.708 1.88469C10.8956 2.07223 11.0009 2.32658 11.0009 2.5918V3.3418H11.5579C12.6299 3.34173 13.6616 3.75019 14.443 4.48403C15.2244 5.21788 15.6968 6.22193 15.7639 7.2918L15.9849 10.8258C16.0704 12.173 16.5227 13.4712 17.2929 14.5798C17.4523 14.8089 17.5497 15.0753 17.5756 15.3531C17.6015 15.631 17.5551 15.9108 17.4408 16.1654C17.3266 16.4199 17.1484 16.6406 16.9236 16.8059C16.6988 16.9713 16.435 17.0756 16.1579 17.1088L12.7509 17.5168V18.5918C12.7509 19.3211 12.4612 20.0206 11.9455 20.5363C11.4297 21.0521 10.7303 21.3418 10.0009 21.3418C9.27158 21.3418 8.57211 21.0521 8.05638 20.5363C7.54066 20.0206 7.25093 19.3211 7.25093 18.5918V17.5168L3.84393 17.1078C3.56702 17.0745 3.30343 16.9702 3.07877 16.8049C2.85411 16.6396 2.67601 16.4191 2.56178 16.1647C2.44755 15.9102 2.40106 15.6306 2.42685 15.3529C2.45263 15.0752 2.5498 14.8088 2.70893 14.5798C3.47917 13.4712 3.93149 12.173 4.01693 10.8258L4.23793 7.2918ZM8.44393 4.8418C7.7535 4.84171 7.089 5.10477 6.58571 5.5774C6.08241 6.05004 5.77817 6.69673 5.73493 7.3858L5.51493 10.9198C5.41211 12.5405 4.86779 14.1023 3.94093 15.4358C3.92939 15.4524 3.92234 15.4716 3.92046 15.4917C3.91858 15.5118 3.92193 15.5321 3.93018 15.5505C3.93843 15.5689 3.95131 15.5849 3.96756 15.5968C3.98382 15.6088 4.00289 15.6164 4.02293 15.6188L7.75993 16.0678C9.24893 16.2458 10.7529 16.2458 12.2419 16.0678L15.9789 15.6188C15.999 15.6164 16.018 15.6088 16.0343 15.5968C16.0505 15.5849 16.0634 15.5689 16.0717 15.5505C16.0799 15.5321 16.0833 15.5118 16.0814 15.4917C16.0795 15.4716 16.0725 15.4524 16.0609 15.4358C15.1344 14.1022 14.5904 12.5404 14.4879 10.9198L14.2669 7.3858C14.2237 6.69673 13.9194 6.05004 13.4161 5.5774C12.9129 5.10477 12.2484 4.84171 11.5579 4.8418H8.44393ZM10.0009 19.8418C9.31093 19.8418 8.75093 19.2818 8.75093 18.5918V17.8418H11.2509V18.5918C11.2509 19.2818 10.6909 19.8418 10.0009 19.8418Z" fill="#fff"/>
+                            <path d="M15.6435 0.946508C15.4937 1.07728 15.402 1.2622 15.3885 1.4606C15.3749 1.659 15.4408 1.85464 15.5715 2.00451L16.8635 3.48451C17.3648 4.05927 17.648 4.79202 17.6635 5.55451L17.7205 8.27151C17.7246 8.47042 17.8076 8.65955 17.9511 8.7973C18.0947 8.93504 18.2871 9.01012 18.486 9.00601C18.6849 9.0019 18.8741 8.91894 19.0118 8.77538C19.1495 8.63182 19.2246 8.43942 19.2205 8.24051L19.1635 5.52251C19.1403 4.40848 18.7261 3.33807 17.9935 2.49851L16.7015 1.01851C16.5707 0.868696 16.3858 0.776953 16.1874 0.763451C15.989 0.749949 15.7934 0.815794 15.6435 0.946508Z" fill="#fff"/>
+                            </svg>
+                            <h5 className='text-white cursor-pointer' onClick={() => setShowNotifs(!showNotifs)}>
+                                Notifications
+                            </h5>
+                            {showNotifs && (
+                                <div className="notif-lists">
+                                    {notifications.length > 0 ? (
+                                        notifications.map((notif, idx) => (
+                                            <div key={idx} className="notification-item">
+                                            <div
+                                                className="notif-status"
+                                                style={{ backgroundColor: getColor(notif.status) }}
+                                            ></div>
+                                            <div className="notif-message">
+                                                <p>{notif.message}</p>
+                                                <span>
+                                                {notif.notificationDate
+                                                    ? new Date(notif.notificationDate.seconds * 1000).toLocaleString()
+                                                    : ""}
+                                                </span>
+                                            </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                    <p className="no-notifs">No notifications</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                             <h5 className='text-white'>
                                 {user.displayName && user.displayName.length > 6 
                                     ? `${user.displayName.substring(0, 6)}...` 

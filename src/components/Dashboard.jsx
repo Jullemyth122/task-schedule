@@ -24,7 +24,7 @@ const Dashboard = ({  }) => {
         IsCreateBoard, setIsCreateBoard,
         boardAttr,setBoardAttr,
         handleCreateBoard,
-        userBoards
+        userBoards, successMessage, errorMessage
     } = useDashboardFunc()
 
     const [tempboard,setTempBoard] = useState(null)
@@ -32,9 +32,17 @@ const Dashboard = ({  }) => {
 
     const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
     const [boardsDropdownOpen, setBoardsDropdownOpen] = useState(false);
+    const [othDropdownOpen, setOthDropdownOpen] = useState(false);
+    const [othPublicDropdownOpen, setOthPublicDropdownOpen] = useState(false);
+    const [othWorkspaceDropdownOpen, setOthWorkspaceDropdownOpen] = useState(false);
+    
 
     const workspaceDropdownRef = useRef(null);
     const boardsDropdownRef = useRef(null);
+    const OthDropdownRef = useRef(null);
+    const othPublicRef = useRef(null);
+    const othWorkspaceRef = useRef(null);
+
 
     const toggleWorkspaceDropdown = () => {
         setWorkspaceDropdownOpen(prev => !prev);
@@ -43,6 +51,17 @@ const Dashboard = ({  }) => {
     const toggleBoardsDropdown = () => {
         setBoardsDropdownOpen(prev => !prev);
     };
+
+    const toggleOthDropdown = () => {
+        setOthDropdownOpen(prev => !prev);
+    }
+
+    const toggleOthPublic = () => {
+        setOthPublicDropdownOpen(prev => !prev);
+    }
+    const toggleOthWorkspace = () => {
+        setOthWorkspaceDropdownOpen(prev => !prev);
+    }
 
     useEffect(() => {
         // GSAP animation for workspace dropdown
@@ -58,9 +77,31 @@ const Dashboard = ({  }) => {
         } else {
             gsap.to(boardsDropdownRef.current, { height: 0, opacity: 0, duration: 0.3, ease: "power2.inOut" });
         }
+
+        if (othDropdownOpen) {
+            gsap.to(OthDropdownRef.current, { height: "auto", opacity: 1, duration: 0.3, ease: "power2.out" });
+        } else {
+            gsap.to(OthDropdownRef.current, { height: 0, opacity: 1, duration: 0.3, ease: "power2.out" });
+        }
+
+        if (othPublicDropdownOpen) {
+            gsap.to(othPublicRef.current, { height: "auto", opacity: 1, duration: 0.3, ease: "power2.out" });
+        } else {
+            gsap.to(othPublicRef.current, { height: 0, opacity: 1, duration: 0.3, ease: "power2.out" });
+        }
+
+        if (othWorkspaceDropdownOpen) {
+            gsap.to(othWorkspaceRef.current, { height: "auto", opacity: 1, duration: 0.3, ease: "power2.out" });
+        } else {
+            gsap.to(othWorkspaceRef.current, { height: 0, opacity: 1, duration: 0.3, ease: "power2.out" });
+        }
+
     }, [
         workspaceDropdownOpen, 
-        boardsDropdownOpen
+        boardsDropdownOpen,
+        othDropdownOpen,
+        othPublicDropdownOpen,
+        othWorkspaceDropdownOpen,
     ]);
 
     const handleShowBoardClick = (e) => {
@@ -68,7 +109,22 @@ const Dashboard = ({  }) => {
       }
       
 
-    const filteredBoards = userBoards?.filter(board => board.email === currentUser.email);
+      const [currentPage, setCurrentPage] = useState(0);
+      const [currentPage2, setCurrentPage2] = useState(0);
+      const [currentPage3, setCurrentPage3] = useState(0);
+      const itemsPerPage = 5; // Only show 5 items per page
+      
+      const filteredBoards = userBoards?.filter(board => board.email === currentUser.email);
+      const filteredWorldBoards = userBoards?.filter(board => board.boardVisibility === "Public");
+      const filteredWorkspaceBoards = userBoards?.filter(board => board.boardVisibility === "Workspace");
+      
+      const totalPages = Math.ceil(filteredBoards.length / itemsPerPage);
+      const totalPagesWorld = Math.ceil(filteredWorldBoards.length / itemsPerPage);
+      const totalPagesWorkspace = Math.ceil(filteredWorkspaceBoards.length / itemsPerPage);
+      const paginatedBoards = filteredBoards.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+      const paginatedWorldBoards = filteredWorldBoards.slice(currentPage2 * itemsPerPage, (currentPage2 + 1) * itemsPerPage);
+      const paginatedWorkspaceBoards = filteredWorkspaceBoards.slice(currentPage3 * itemsPerPage, (currentPage3 + 1) * itemsPerPage);
+      
 
 
     return (
@@ -89,7 +145,6 @@ const Dashboard = ({  }) => {
                         </Link>
 
                         <div className="sidenav-ulx">
-
                             <div className="sidenav-ulx-head flex items-center justify-between slash">
                                 <h1> Workspace Views </h1>
                                 <svg onClick={toggleWorkspaceDropdown} className='drop-svg' width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -98,9 +153,9 @@ const Dashboard = ({  }) => {
                             </div>
 
                             <div className="dropdown-ulx" ref={workspaceDropdownRef}>
-                                <p> Table </p>
+                                {/* <p> Table </p>
                                 <p> Calendar </p>
-                                <p> Ganchart </p>
+                                <p> Ganchart </p> */}
                             </div>
                             
                         </div>
@@ -121,74 +176,134 @@ const Dashboard = ({  }) => {
                                 <path d="M16 17.5C16.8284 17.5 17.5 16.8284 17.5 16C17.5 15.1716 16.8284 14.5 16 14.5C15.1716 14.5 14.5 15.1716 14.5 16C14.5 16.8284 15.1716 17.5 16 17.5Z" fill="black"/>
                                 </svg>
                             </div>
-
-                            {IsCreateBoard && 
-                                <>
-                                    <div className="board_create-show"
-                                        tabIndex={0} // Make the div focusable
-                                        onBlur={(e) => {
-                                        // If the new focused element is not inside this container, close it
+                            {IsCreateBoard && (
+                                <div
+                                    className="modal-overlay"
+                                    tabIndex={0}
+                                    onBlur={(e) => {
                                         if (!e.currentTarget.contains(e.relatedTarget)) {
                                             setIsCreateBoard(false);
                                         }
-                                        }}
-                                    >
-                                        <div className="create-ttl">
-                                            <h5> Create Board </h5>
-                                        </div>
-                                        <img className='main-img' src="/img/btc5.jpg" alt="Yes" />
+                                    }}
+                                >
+                                    <div className="modal-content">
+                                        <header className="modal-header">
+                                            <h2>Create Board</h2>
+                                            <button className="close-btn" onClick={() => setIsCreateBoard(false)}>
+                                                <svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" clip-rule="evenodd" d="M17 4.5918H14V1.5918C14 1.32658 13.8946 1.07223 13.7071 0.88469C13.5196 0.697154 13.2652 0.591797 13 0.591797C12.7348 0.591797 12.4804 0.697154 12.2929 0.88469C12.1054 1.07223 12 1.32658 12 1.5918V4.5918C12 5.12223 12.2107 5.63094 12.5858 6.00601C12.9609 6.38108 13.4696 6.5918 14 6.5918H17C17.2652 6.5918 17.5196 6.48644 17.7071 6.2989C17.8946 6.11137 18 5.85701 18 5.5918C18 5.32658 17.8946 5.07223 17.7071 4.88469C17.5196 4.69715 17.2652 4.5918 17 4.5918ZM4 6.5918C4.53043 6.5918 5.03914 6.38108 5.41421 6.00601C5.78929 5.63094 6 5.12223 6 4.5918V1.5918C6 1.32658 5.89464 1.07223 5.70711 0.88469C5.51957 0.697154 5.26522 0.591797 5 0.591797C4.73478 0.591797 4.48043 0.697154 4.29289 0.88469C4.10536 1.07223 4 1.32658 4 1.5918V4.5918H1C0.734784 4.5918 0.48043 4.69715 0.292893 4.88469C0.105357 5.07223 0 5.32658 0 5.5918C0 5.85701 0.105357 6.11137 0.292893 6.2989C0.48043 6.48644 0.734784 6.5918 1 6.5918H4ZM4 14.5918H1C0.734784 14.5918 0.48043 14.4864 0.292893 14.2989C0.105357 14.1114 0 13.857 0 13.5918C0 13.3266 0.105357 13.0722 0.292893 12.8847C0.48043 12.6972 0.734784 12.5918 1 12.5918H4C4.53043 12.5918 5.03914 12.8025 5.41421 13.1776C5.78929 13.5527 6 14.0614 6 14.5918V17.5918C6 17.857 5.89464 18.1114 5.70711 18.2989C5.51957 18.4864 5.26522 18.5918 5 18.5918C4.73478 18.5918 4.48043 18.4864 4.29289 18.2989C4.10536 18.1114 4 17.857 4 17.5918V14.5918ZM14 12.5918C13.4696 12.5918 12.9609 12.8025 12.5858 13.1776C12.2107 13.5527 12 14.0614 12 14.5918V17.5918C12 17.857 12.1054 18.1114 12.2929 18.2989C12.4804 18.4864 12.7348 18.5918 13 18.5918C13.2652 18.5918 13.5196 18.4864 13.7071 18.2989C13.8946 18.1114 14 17.857 14 17.5918V14.5918H17C17.2652 14.5918 17.5196 14.4864 17.7071 14.2989C17.8946 14.1114 18 13.857 18 13.5918C18 13.3266 17.8946 13.0722 17.7071 12.8847C17.5196 12.6972 17.2652 12.5918 17 12.5918H14Z" fill="black"/>
+                                                </svg>
+                                            </button>
+                                        </header>
 
-                                        <div className="collection-img flex items-center justify-center gap-1">
-                                            <img src="/img/btc5.jpg" alt="" />
-                                            <img src="/img/btc5.jpg" alt="" />
-                                            <img src="/img/btc5.jpg" alt="" />
-                                            <img src="/img/btc5.jpg" alt="" />
+                                    {/* Message area */}
+                                    {(successMessage || errorMessage) && (
+                                        <div className="message-container">
+                                        {successMessage && (
+                                            <div className="message success">{successMessage}</div>
+                                        )}
+                                        {errorMessage && (
+                                            <div className="message error">{errorMessage}</div>
+                                        )}
                                         </div>
+                                    )}
 
+                                    <div className="modal-body">
+                                        <div className="image-preview">
+                                            <img className="main-img" src="/img/s1.jpg" alt="Board Cover" />
+                                        </div>
+                                        <div className="collection-img">
+                                            <img src="/img/s1.jpg" alt="Thumbnail" />
+                                            <img src="/img/s2.jpg" alt="Thumbnail" />
+                                            <img src="/img/s3.jpg" alt="Thumbnail" />
+                                            <img src="/img/s4.jpg" alt="Thumbnail" />
+                                            <img src="/img/s5.jpg" alt="Thumbnail" />
+                                        </div>
                                         <input
                                             type="text"
                                             placeholder="Board Title"
                                             value={boardAttr.boardTitle}
-                                            onChange={e => setBoardAttr(prevState => ({ ...prevState, boardTitle: e.target.value }))}
+                                            onChange={(e) =>
+                                                setBoardAttr((prevState) => ({
+                                                ...prevState,
+                                                boardTitle: e.target.value,
+                                                }))
+                                            }
                                         />
-                                        <div className="vtb-1">
-                                            <label htmlFor=""> Visibility </label>
-                                            <select name="" id=""
-                                            value={boardAttr.boardVisibility}
-                                            onChange={e => setBoardAttr(prevState => ({ ...prevState, boardVisibility: e.target.value }))}
+                                        <div className="select-group">
+                                            <label>Visibility</label>
+                                            <select
+                                                value={boardAttr.boardVisibility}
+                                                onChange={(e) =>
+                                                setBoardAttr((prevState) => ({
+                                                    ...prevState,
+                                                    boardVisibility: e.target.value,
+                                                }))
+                                                }
                                             >
-                                                <option value="Private"> Private </option>
-                                                <option value="Workspace"> Workspace </option>
-                                                <option value="Public"> Public </option>
+                                                <option value="Private">Private</option>
+                                                <option value="Workspace">Workspace</option>
+                                                <option value="Public">Public</option>
                                             </select>
                                         </div>
                                         <input
                                             type="text"
                                             placeholder="Board Template"
                                             value={boardAttr.boardTemplate}
-                                            onChange={e => setBoardAttr(prevState => ({ ...prevState, boardTemplate: e.target.value }))}
+                                            onChange={(e) =>
+                                                setBoardAttr((prevState) => ({
+                                                ...prevState,
+                                                boardTemplate: e.target.value,
+                                                }))
+                                            }
                                         />
-                                        <button className='create-btn' onClick={e => handleCreateBoard(e, currentUser, boardAttr)}>
-                                            <h3> Create Item </h3>
-                                        </button>
                                     </div>
-                                </>
-                            }
+                                    <footer className="modal-footer">
+                                        <button
+                                            className="create-btn"
+                                            onClick={(e) => handleCreateBoard(e, currentUser, boardAttr)}
+                                        >
+                                        Create Board
+                                        </button>
+                                    </footer>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="dropdown-ulx" ref={boardsDropdownRef}>
-                                {filteredBoards?.map((board, index) => {                                     
-                                    return (
+                                {paginatedBoards.map((board, index) => (                                     
                                     <Link 
                                         key={index}
-                                        to={`/dashboard/${board?.id}`}
+                                        to={`/dashboard/${board.id}`}
                                         className='boardtitles'
-
                                         onClick={handleShowBoardClick}
                                     >
-                                        {board?.boardTitle}
+                                        {board.boardTitle}
                                     </Link>
-                                    )} 
-                                )}
+                                ))}
+
+                                <div className="pagination-controls flex justify-between mt-2">
+                                    <button 
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
+                                        disabled={currentPage === 0}
+                                        className="pagination-btn"
+                                    >
+                                        <svg width="9" height="14" viewBox="0 0 9 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M8.36296 13.6113C8.47884 13.4957 8.57077 13.3583 8.6335 13.2071C8.69623 13.0559 8.72852 12.8938 8.72852 12.7301C8.72852 12.5664 8.69623 12.4042 8.6335 12.253C8.57077 12.1018 8.47884 11.9645 8.36296 11.8488L3.51296 6.99881L8.36296 2.14881C8.59668 1.91509 8.72799 1.5981 8.72799 1.26756C8.72799 0.937031 8.59668 0.620034 8.36296 0.386312C8.12924 0.152589 7.81224 0.0212879 7.48171 0.0212879C7.15118 0.0212879 6.83418 0.152589 6.60046 0.386312L0.86296 6.12381C0.747081 6.23946 0.655146 6.37682 0.59242 6.52803C0.529693 6.67925 0.497406 6.84135 0.497406 7.00506C0.497406 7.16877 0.529693 7.33088 0.59242 7.48209C0.655146 7.63331 0.747081 7.77067 0.86296 7.88631L6.60046 13.6238C7.07546 14.0988 7.87546 14.0988 8.36296 13.6113Z" fill="white"/>
+                                        </svg>
+                                    </button>
+                                    <span className='text-black'> {currentPage + 1} of {totalPages} </span>
+                                    <button 
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
+                                        disabled={currentPage === totalPages - 1}
+                                        className="pagination-btn"
+                                    >
+                                        <svg width="9" height="14" viewBox="0 0 9 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M0.63704 0.386734C0.52116 0.502376 0.429226 0.639737 0.366499 0.790954C0.303772 0.94217 0.271484 1.10427 0.271484 1.26798C0.271484 1.43169 0.303772 1.5938 0.366499 1.74501C0.429226 1.89623 0.52116 2.03359 0.63704 2.14923L5.48704 6.99923L0.63704 11.8492C0.403318 12.083 0.272014 12.4 0.272014 12.7305C0.272014 13.061 0.403318 13.378 0.63704 13.6117C0.870762 13.8455 1.18776 13.9768 1.51829 13.9768C1.84882 13.9768 2.16582 13.8455 2.39954 13.6117L8.13704 7.87423C8.25292 7.75859 8.34485 7.62123 8.40758 7.47001C8.47031 7.3188 8.50259 7.15669 8.50259 6.99298C8.50259 6.82927 8.47031 6.66717 8.40758 6.51595C8.34485 6.36474 8.25292 6.22738 8.13704 6.11173L2.39954 0.374234C1.92454 -0.100766 1.12454 -0.100766 0.63704 0.386734Z" fill="white"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
                                 <div className="create-board" onClick={e => setIsCreateBoard(!IsCreateBoard)}>
                                     <p> 
                                         Create Board 
@@ -199,10 +314,94 @@ const Dashboard = ({  }) => {
 
                                 </div>
                             </div>
+                        </div>
+                        <div className="sidenav-ulx slash others">
 
+                            <div className="oth_board-ulx flex items-center justify-between">
+                                <h1> Other Boards </h1>
+                                <svg className='oth-svg cursor-pointer' onClick={toggleOthDropdown} width="20" height="21" viewBox="0 0 20 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13 17.5918H15V13.5918H17V17.5918H19L16 20.5918L13 17.5918ZM10 16.5918C10 14.3918 11.2 12.4918 13 11.3918C12.9 10.8918 12.5 10.5918 12 10.5918H6V8.5918H8C8.6 8.5918 9 8.1918 9 7.5918V5.5918H11C12.1 5.5918 13 4.6918 13 3.5918V3.1918C15.9 4.3918 18 7.1918 18 10.5918V10.8918C18.7 11.0918 19.3 11.4918 19.9 11.9918C20 11.5918 20 11.0918 20 10.5918C20 5.0918 15.5 0.591797 10 0.591797C4.5 0.591797 0 5.0918 0 10.5918C0 16.0918 4.5 20.5918 10 20.5918C10.5 20.5918 11 20.5918 11.4 20.4918C10.5 19.3918 10 18.0918 10 16.5918ZM9 18.4918C5 17.9918 2 14.6918 2 10.5918C2 9.9918 2.1 9.3918 2.2 8.7918L7 13.5918V14.5918C7 15.6918 7.9 16.5918 9 16.5918V18.4918Z" fill="black"/>
+                                </svg>
+                            </div>
+                            
+                            <div className="fix-oth">
+                                <div className="dropdown-ulx oth" ref={OthDropdownRef}>
+                                    <div className="public-dd">
+                                        <h3 onClick={toggleOthPublic} className='cursor-pointer'> Public Board </h3>
+                                        <div className="public-list dropdown-ulx" ref={othPublicRef}>
+                                            {paginatedWorldBoards.map((board, index) => (                                     
+                                                <Link 
+                                                    key={index}
+                                                    to={`/dashboard/${board.id}`}
+                                                    className='boardtitles'
+                                                    onClick={handleShowBoardClick}
+                                                >
+                                                    {board.boardTitle}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                        <div className="pagination-controls flex justify-between mt-2">
+                                            <button 
+                                                onClick={() => setCurrentPage2(prev => Math.max(prev - 1, 0))}
+                                                disabled={currentPage2 === 0}
+                                                className="pagination-btn"
+                                            >
+                                                <svg width="9" height="14" viewBox="0 0 9 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M8.36296 13.6113C8.47884 13.4957 8.57077 13.3583 8.6335 13.2071C8.69623 13.0559 8.72852 12.8938 8.72852 12.7301C8.72852 12.5664 8.69623 12.4042 8.6335 12.253C8.57077 12.1018 8.47884 11.9645 8.36296 11.8488L3.51296 6.99881L8.36296 2.14881C8.59668 1.91509 8.72799 1.5981 8.72799 1.26756C8.72799 0.937031 8.59668 0.620034 8.36296 0.386312C8.12924 0.152589 7.81224 0.0212879 7.48171 0.0212879C7.15118 0.0212879 6.83418 0.152589 6.60046 0.386312L0.86296 6.12381C0.747081 6.23946 0.655146 6.37682 0.59242 6.52803C0.529693 6.67925 0.497406 6.84135 0.497406 7.00506C0.497406 7.16877 0.529693 7.33088 0.59242 7.48209C0.655146 7.63331 0.747081 7.77067 0.86296 7.88631L6.60046 13.6238C7.07546 14.0988 7.87546 14.0988 8.36296 13.6113Z" fill="white"/>
+                                                </svg>
+                                            </button>
+                                            <span className='text-black'> {currentPage2 + 1} of {totalPagesWorld} </span>
+                                            <button 
+                                                onClick={() => setCurrentPage2(prev => Math.min(prev + 1, totalPagesWorld - 1))}
+                                                disabled={currentPage2 === totalPagesWorld - 1}
+                                                className="pagination-btn"
+                                            >
+                                                <svg width="9" height="14" viewBox="0 0 9 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M0.63704 0.386734C0.52116 0.502376 0.429226 0.639737 0.366499 0.790954C0.303772 0.94217 0.271484 1.10427 0.271484 1.26798C0.271484 1.43169 0.303772 1.5938 0.366499 1.74501C0.429226 1.89623 0.52116 2.03359 0.63704 2.14923L5.48704 6.99923L0.63704 11.8492C0.403318 12.083 0.272014 12.4 0.272014 12.7305C0.272014 13.061 0.403318 13.378 0.63704 13.6117C0.870762 13.8455 1.18776 13.9768 1.51829 13.9768C1.84882 13.9768 2.16582 13.8455 2.39954 13.6117L8.13704 7.87423C8.25292 7.75859 8.34485 7.62123 8.40758 7.47001C8.47031 7.3188 8.50259 7.15669 8.50259 6.99298C8.50259 6.82927 8.47031 6.66717 8.40758 6.51595C8.34485 6.36474 8.25292 6.22738 8.13704 6.11173L2.39954 0.374234C1.92454 -0.100766 1.12454 -0.100766 0.63704 0.386734Z" fill="white"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="workspace-dd">
+                                        <h3 onClick={toggleOthWorkspace} className='cursor-pointer'> Workspace Board </h3>
+                                        <div className="workspace-list dropdown-ulx" ref={othWorkspaceRef}>
+                                            {paginatedWorkspaceBoards.map((board, index) => (                                     
+                                                <Link 
+                                                    key={index}
+                                                    to={`/dashboard/${board.id}`}
+                                                    className='boardtitles'
+                                                    onClick={handleShowBoardClick}
+                                                >
+                                                    {board.boardTitle}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                        <div className="pagination-controls flex justify-between mt-2">
+                                            <button 
+                                                onClick={() => setCurrentPage3(prev => Math.max(prev - 1, 0))}
+                                                disabled={currentPage3 === 0}
+                                                className="pagination-btn"
+                                            >
+                                                <svg width="9" height="14" viewBox="0 0 9 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M8.36296 13.6113C8.47884 13.4957 8.57077 13.3583 8.6335 13.2071C8.69623 13.0559 8.72852 12.8938 8.72852 12.7301C8.72852 12.5664 8.69623 12.4042 8.6335 12.253C8.57077 12.1018 8.47884 11.9645 8.36296 11.8488L3.51296 6.99881L8.36296 2.14881C8.59668 1.91509 8.72799 1.5981 8.72799 1.26756C8.72799 0.937031 8.59668 0.620034 8.36296 0.386312C8.12924 0.152589 7.81224 0.0212879 7.48171 0.0212879C7.15118 0.0212879 6.83418 0.152589 6.60046 0.386312L0.86296 6.12381C0.747081 6.23946 0.655146 6.37682 0.59242 6.52803C0.529693 6.67925 0.497406 6.84135 0.497406 7.00506C0.497406 7.16877 0.529693 7.33088 0.59242 7.48209C0.655146 7.63331 0.747081 7.77067 0.86296 7.88631L6.60046 13.6238C7.07546 14.0988 7.87546 14.0988 8.36296 13.6113Z" fill="white"/>
+                                                </svg>
+                                            </button>
+                                            <span className='text-black'> {currentPage3 + 1} of {totalPagesWorkspace} </span>
+                                            <button 
+                                                onClick={() => setCurrentPage3(prev => Math.min(prev + 1, totalPagesWorkspace - 1))}
+                                                disabled={currentPage3 === totalPagesWorkspace - 1}
+                                                className="pagination-btn"
+                                            >
+                                                <svg width="9" height="14" viewBox="0 0 9 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M0.63704 0.386734C0.52116 0.502376 0.429226 0.639737 0.366499 0.790954C0.303772 0.94217 0.271484 1.10427 0.271484 1.26798C0.271484 1.43169 0.303772 1.5938 0.366499 1.74501C0.429226 1.89623 0.52116 2.03359 0.63704 2.14923L5.48704 6.99923L0.63704 11.8492C0.403318 12.083 0.272014 12.4 0.272014 12.7305C0.272014 13.061 0.403318 13.378 0.63704 13.6117C0.870762 13.8455 1.18776 13.9768 1.51829 13.9768C1.84882 13.9768 2.16582 13.8455 2.39954 13.6117L8.13704 7.87423C8.25292 7.75859 8.34485 7.62123 8.40758 7.47001C8.47031 7.3188 8.50259 7.15669 8.50259 6.99298C8.50259 6.82927 8.47031 6.66717 8.40758 6.51595C8.34485 6.36474 8.25292 6.22738 8.13704 6.11173L2.39954 0.374234C1.92454 -0.100766 1.12454 -0.100766 0.63704 0.386734Z" fill="white"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         

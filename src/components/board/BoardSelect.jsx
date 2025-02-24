@@ -1,8 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useDashboardFunc } from "../../context/useDashboardFunc"; // Import context
 import "../../scss/boardselect.scss";
-import { useState } from "react";
-import { doc, updateDoc } from "firebase/firestore"; 
+import { useEffect, useState } from "react";
+import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore"; 
 import { db } from "../../utilities/firebase";
 import { useAuth } from "../../context/useAuth";
 
@@ -12,16 +12,59 @@ const BoardSelect = () => {
     const { accBST } = useAuth();
 
     const selectedBoard = userBoards.find((board) => board?.id === itemId);
+    const images = [
+        '/img/s1.jpg',
+        '/img/s2.jpg',
+        '/img/s3.jpg',
+        '/img/s4.jpg',
+        '/img/s5.jpg'
+    ];
+    
+      // Choose a random image only once when the component mounts.
+    const [selectedImage] = useState(() => {
+        return images[Math.floor(Math.random() * images.length)];
+    });
+    
+
+
+    // Inside your BoardSelect component:
+    const [boardOwner, setBoardOwner] = useState(null);
+    
+    useEffect(() => {
+        async function fetchBoardOwner() {
+            if (selectedBoard && selectedBoard.email && selectedBoard.email !== accBST.email) {
+            const q = query(
+                collection(db, "account"),
+                where("email", "==", selectedBoard.email)
+            );
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                const ownerData = querySnapshot.docs[0].data();
+                setBoardOwner(ownerData);
+            } else {
+                console.error("Board owner not found in accounts.");
+            }
+            } else {
+            setBoardOwner(null);
+            }
+        }
+        fetchBoardOwner();
+    }, [selectedBoard, accBST?.email]);
+    
+    const settings = boardOwner ? boardOwner : accBST;
+
+    
     const [activeCategory, setActiveCategory] = useState({});
     const [newTask, setNewTask] = useState({});
     const [editedCategoryTitles, setEditedCategoryTitles] = useState({});
     const [expandedTaskItems, setExpandedTaskItems] = useState({});
-
-    // State for error messages when adding new cards to a category
     const [taskErrors, setTaskErrors] = useState({});
-    // New state for creating a new category (taskList item)
+    
+    const [taskDotsOpen, setTaskDotsOpen] = useState({});
+    const [colorDropdownOpen, setColorDropdownOpen] = useState({});
+
+
     const [newCategory, setNewCategory] = useState("");
-    // New state for errors when adding a new category (board-level task limit)
     const [newCategoryError, setNewCategoryError] = useState("");
 
     const toggleCategory = (category) => {
@@ -29,8 +72,9 @@ const BoardSelect = () => {
     };
 
     const displayedCategories = selectedBoard
-        ? selectedBoard.taskList.slice(0, accBST.taskLimits)
+        ? selectedBoard.taskList.slice(0, settings.taskLimits)
         : [];
+      
 
 
     const handleCategoryTitleUpdate = async (categoryIndex, newTitle) => {
@@ -66,14 +110,12 @@ const BoardSelect = () => {
 
         const updatedTaskList = selectedBoard.taskList.map((task) => {
             if (task.title === categoryTitle) {
-                // Check if the current number of tasks is at the limit (using cardLimits)
                 if (task.tasks.length >= accBST.cardLimits) {
                     setTaskErrors((prev) => ({
                         ...prev,
                         [categoryTitle]:
                             "You have reached the maximum number of tasks for this category."
                     }));
-                    // Clear the error after 3 seconds
                     setTimeout(() => {
                         setTaskErrors((prev) => {
                             const newState = { ...prev };
@@ -83,7 +125,6 @@ const BoardSelect = () => {
                     }, 3000);
                     return task;
                 }
-                // Clear any previous error if below limit
                 setTaskErrors((prev) => ({
                     ...prev,
                     [categoryTitle]: ""
@@ -111,10 +152,8 @@ const BoardSelect = () => {
         }
     };
 
-    // NEW: Function to add a new category
     const handleCreateCategory = async () => {
         if (!newCategory.trim() || !selectedBoard) return;
-        // Check board's current category count against taskLimits (board limit)
         if (selectedBoard.taskList.length >= accBST.taskLimits) {
             setNewCategoryError("You have reached the maximum number of categories for this board.");
             setTimeout(() => {
@@ -122,7 +161,6 @@ const BoardSelect = () => {
             }, 3000);
             return;
         }
-        // New category object with empty arrays for tasks, taggings, and links
         const newCategoryObj = {
             title: newCategory,
             tasks: [],
@@ -144,7 +182,146 @@ const BoardSelect = () => {
         }
     };
 
+    const handleDeleteCategory = async (categoryIndex) => {
+        if (!selectedBoard) return;
+        const updatedTaskList = selectedBoard.taskList.filter(
+            (_, idx) => idx !== categoryIndex
+        );
+        try {
 
+            const boardRef = doc(db, "boards", selectedBoard.id);
+            await updateDoc(boardRef, { taskList: updatedTaskList });
+            setUserBoards((prevBoards) =>
+                prevBoards.map((board) =>
+                    board.id === selectedBoard.id
+                        ? { ...board, taskList: updatedTaskList }
+                        : board
+                )
+            );
+            setTaskDotsOpen((prev) => ({
+                ...prev,
+                [categoryIndex]: !prev[categoryIndex]
+            }))
+        } catch (error) {
+            console.error("Error deleting category:", error);
+        }
+    };
+    
+    const handleDeleteTask = async (categoryIndex, taskIndex) => {
+        if (!selectedBoard) return;
+        const updatedTaskList = selectedBoard.taskList.map((category, idx) => {
+            if (idx === categoryIndex) {
+                return {
+                    ...category,
+                    tasks: category.tasks.filter((_, index) => index !== taskIndex)
+                };
+            }
+            return category;
+        });
+        try {
+            const boardRef = doc(db, "boards", selectedBoard.id);
+            await updateDoc(boardRef, { taskList: updatedTaskList });
+            setUserBoards((prevBoards) =>
+                prevBoards.map((board) =>
+                    board.id === selectedBoard.id
+                        ? { ...board, taskList: updatedTaskList }
+                        : board
+                )
+            );
+        } catch (error) {
+            console.error("Error deleting task:", error);
+        }
+    };
+
+    const handleSample = () => {
+
+    }
+
+    const handleNextTaskCategory = async (categoryIndex, taskIndex) => {
+        if (!selectedBoard) return;
+        if (categoryIndex >= selectedBoard.taskList.length - 1) return;
+        const taskToMove = selectedBoard.taskList[categoryIndex].tasks[taskIndex];
+        const updatedTaskList = selectedBoard.taskList.map((category, idx) => {
+            if (idx === categoryIndex) {
+                return {
+                    ...category,
+                    tasks: category.tasks.filter((_, index) => index !== taskIndex)
+                };
+            }
+            if (idx === categoryIndex + 1) {
+                return {
+                    ...category,
+                    tasks: [...category.tasks, taskToMove]
+                };
+            }
+            return category;
+        });
+        try {
+            const boardRef = doc(db, "boards", selectedBoard.id);
+            await updateDoc(boardRef, { taskList: updatedTaskList });
+            setUserBoards((prevBoards) =>
+            prevBoards.map((board) =>
+                board.id === selectedBoard.id
+                ? { ...board, taskList: updatedTaskList }
+                : board
+            )
+            );
+        } catch (error) {
+            console.error("Error moving task forward:", error);
+        }
+    };
+
+    const handlePreviousTaskCategory = async (categoryIndex, taskIndex) => {
+        if (!selectedBoard) return;
+        // If already in the first category, do nothing.
+        if (categoryIndex <= 0) return;
+        const taskToMove = selectedBoard.taskList[categoryIndex].tasks[taskIndex];
+        const updatedTaskList = selectedBoard.taskList.map((category, idx) => {
+            if (idx === categoryIndex) {
+            return {
+                ...category,
+                tasks: category.tasks.filter((_, index) => index !== taskIndex)
+            };
+            }
+            if (idx === categoryIndex - 1) {
+            return {
+                ...category,
+                tasks: [...category.tasks, taskToMove]
+            };
+            }
+            return category;
+        });
+        try {
+            const boardRef = doc(db, "boards", selectedBoard.id);
+            await updateDoc(boardRef, { taskList: updatedTaskList });
+            setUserBoards((prevBoards) =>
+            prevBoards.map((board) =>
+                board.id === selectedBoard.id
+                ? { ...board, taskList: updatedTaskList }
+                : board
+            )
+            );
+        } catch (error) {
+            console.error("Error moving task backward:", error);
+        }
+    };
+
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.td-1')) {
+                setTaskDotsOpen({});
+            }
+        };
+      
+        document.addEventListener("mousedown", handleClickOutside);
+      
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+    
     return (
         <div className="board-select">
             <div className="headline flex items-center justify-between">
@@ -162,34 +339,34 @@ const BoardSelect = () => {
                     Share
                 </button>
             </div>
+            <img src={selectedImage} alt="Thumbnail" className="thumbnail absolute -z-10"/>
 
             <div className="list-of-tasks flex items-start justify-start gap-2 flex-wrap">
                 {selectedBoard &&
                     displayedCategories.map((task, displayedIndex) => {
-                    // Get the original index of this category (if needed)
-                    // For simplicity, we assume the slice preserves order from the full taskList.
+
                     const currentCategoryTitle =
                         editedCategoryTitles[displayedIndex] !== undefined
                             ? editedCategoryTitles[displayedIndex]
                             : task.title;
-                    // Limit tasks to the card limit
-                    const displayTaskItems = task.tasks.slice(0, accBST.cardLimits);
+
+                            // const displayTaskItems = task.tasks.slice(0, accBST.cardLimits);
+                            const displayTaskItems = task.tasks.slice(0, settings.cardLimits);
 
 
                     return (
                         <div className="task" key={displayedIndex}>
-                            <div className="td-1">
+                            <div className="td-1 relative">
                                 <input
                                     type="text"
                                     value={currentCategoryTitle}
-                                    // Update the temporary state as the user types
+
                                     onChange={(e) =>
                                         setEditedCategoryTitles((prev) => ({
                                             ...prev,
                                             [displayedIndex]: e.target.value
                                         }))
                                     }
-                                    // On Enter, update Firestore and local state
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter") {
                                             handleCategoryTitleUpdate(
@@ -199,7 +376,14 @@ const BoardSelect = () => {
                                         }
                                     }}
                                 />
+                                
                                 <svg
+                                    onClick={() =>
+                                        setTaskDotsOpen((prev) => ({
+                                        ...prev,
+                                        [displayedIndex]: !prev[displayedIndex]
+                                        }))
+                                    }
                                     width="17"
                                     height="5"
                                     viewBox="0 0 17 5"
@@ -208,22 +392,87 @@ const BoardSelect = () => {
                                 >
                                     <path d="M10.0625 2.5C10.0625 2.80903 9.97086 3.11113 9.79917 3.36808C9.62748 3.62503 9.38345 3.8253 9.09794 3.94356C8.81243 4.06182 8.49827 4.09277 8.19517 4.03248C7.89208 3.97219 7.61367 3.82337 7.39515 3.60485C7.17663 3.38633 7.02781 3.10792 6.96752 2.80483C6.90723 2.50173 6.93818 2.18757 7.05644 1.90206C7.1747 1.61655 7.37497 1.37252 7.63192 1.20083C7.88887 1.02914 8.19097 0.9375 8.5 0.9375C8.9144 0.9375 9.31183 1.10212 9.60485 1.39515C9.89788 1.68817 10.0625 2.0856 10.0625 2.5ZM1.85938 0.9375C1.55034 0.9375 1.24825 1.02914 0.991298 1.20083C0.734346 1.37252 0.534076 1.61655 0.415814 1.90206C0.297552 2.18757 0.266609 2.50173 0.326899 2.80483C0.387188 3.10792 0.536002 3.38633 0.754521 3.60485C0.973041 3.82337 1.25145 3.97219 1.55455 4.03248C1.85764 4.09277 2.17181 4.06182 2.45732 3.94356C2.74283 3.8253 2.98686 3.62503 3.15855 3.36808C3.33024 3.11113 3.42188 2.80903 3.42188 2.5C3.42188 2.0856 3.25726 1.68817 2.96423 1.39515C2.6712 1.10212 2.27378 0.9375 1.85938 0.9375ZM15.1406 0.9375C14.8316 0.9375 14.5295 1.02914 14.2725 1.20083C14.0156 1.37252 13.8153 1.61655 13.6971 1.90206C13.5788 2.18757 13.5479 2.50173 13.6081 2.80483C13.6684 3.10792 13.8173 3.38633 14.0358 3.60485C14.2543 3.82337 14.5327 3.97219 14.8358 4.03248C15.1389 4.09277 15.4531 4.06182 15.7386 3.94356C16.0241 3.8253 16.2681 3.62503 16.4398 3.36808C16.6115 3.11113 16.7031 2.80903 16.7031 2.5C16.7031 2.0856 16.5385 1.68817 16.2455 1.39515C15.9525 1.10212 15.555 0.9375 15.1406 0.9375Z" fill="#fff"/>
                                 </svg>
+
+                                {taskDotsOpen[displayedIndex] && (
+                                <div className="dropdown-menu flex flex-col">
+                                    <h1> Settings Card </h1>
+                                    <div className="dropdown-item del-area flex items-center justify-between hovers"
+                                        onClick={() => handleDeleteCategory(displayedIndex)}
+                                    >
+                                        <span>Delete</span>
+                                    </div>
+                                    <div className="dropdown-item color-area flex items-center justify-between"
+                                        onClick={(e) => {
+                                        e.stopPropagation(); 
+                                        setColorDropdownOpen((prev) => ({
+                                            ...prev,
+                                            [displayedIndex]: !prev[displayedIndex]
+                                        }));
+                                    }}>
+                                        <div className="ddi py-2 flex items-center justify-between w-full h-full hovers">
+                                            <span>Change Color</span>
+                                            <div className="circle bg-gray-500"></div>
+                                        </div>
+
+                                        {colorDropdownOpen[displayedIndex] && (
+
+                                        <div className="sec_dropdown-menu flex flex-col gap-1.5">
+                                            <h1> Custom Color </h1>
+                                            <div className="secdropdown-item flex items-center justify-between hovers">
+                                                <span className="circle bg-red-500"></span>
+                                                <span> "Initial" </span>
+                                            </div>
+                                            <div className="secdropdown-item hovers">
+                                                <span className="circle bg-blue-500"></span>
+                                                <span className="circle bg-amber-500"></span>
+                                                <span className="circle bg-teal-500"></span>
+                                                <span className="circle bg-cyan-500"></span>
+                                                <span> Custom </span>
+                                            </div>
+                                            <div className="secdropdown-item hovers">
+                                                <span className="circle bg-green-500"></span>
+                                                <span> "Finish" </span>
+
+                                            </div>
+                                        </div>
+                                        
+                                        )}
+                                    </div>
+                                    <div className="dropdown-item flex items-center justify-between">
+                                        <span> Limits TasksList </span>
+                                        <span> {settings.taskLimits} </span>
+                                    </div>
+                                    <div className="dropdown-item flex items-center justify-between">
+                                        <span> Limits Card </span>
+                                        <span> {settings.cardLimits} </span>
+                                    </div>
+                                    <div className="dropdown-item flex items-center justify-between">
+                                        <span> Link Status </span>
+                                        {settings.islinks ?  
+                                            <div className="circle bg-green-500"></div>
+                                            :
+                                            <div className="circle bg-red-500"></div>
+                                        }
+                                    </div>
+                                    <div className="dropdown-item flex items-center justify-between">
+                                        <span> Tagging Status </span>
+                                        {settings.istagging ?
+                                            <div className="circle bg-green-500"></div>
+                                            :
+                                            <div className="circle bg-red-500"></div>
+                                        }
+                                    </div>
+                                </div>
+                                )}
+
                             </div>
 
                             <div className="card-sect grid grid-cols-1 gap-2">
                                 {displayTaskItems.map((taskItem, i) => {
-                                    // Create a unique key for each task card
                                     const cardKey = `${currentCategoryTitle}-${i}`;
                                     const isExpanded = expandedTaskItems[cardKey] || false;
                                     return (
-                                        <div
-                                            className={`expand ${isExpanded ? "true" : "false"}`}
-                                            key={i}
-                                        >
-                                            {/* 
-                                                Wrap the input and additional UI in a focusable div.
-                                                onFocus will expand the card; onBlur will collapse it.
-                                            */}
+                                        <div className={`expand ${isExpanded ? "true" : "false"}`} key={i}>
                                             <div
                                                 tabIndex="0"
                                                 onFocus={() =>
@@ -232,30 +481,59 @@ const BoardSelect = () => {
                                                         [cardKey]: true
                                                     }))
                                                 }
-                                                onBlur={() =>
-                                                    setExpandedTaskItems((prev) => ({
-                                                        ...prev,
-                                                        [cardKey]: false
-                                                    }))
-                                                }
+                                                onBlur={(e) => {
+                                                    if (!e.currentTarget.contains(e.relatedTarget)) {
+                                                        setExpandedTaskItems((prev) => ({
+                                                            ...prev,
+                                                            [cardKey]: false
+                                                        }));
+                                                    }
+                                                }}                                                
                                             >
-                                                <input
-                                                    type="text"
-                                                    placeholder={`${taskItem}`}
-                                                    // Optionally, you can still use onClick if desired
-                                                />
+                                                <input type="text" placeholder={`${taskItem}`} />
                                                 {isExpanded && (
-                                                    <div className="flex items-center justify-start gap-1 py-2">
-                                                        {accBST?.islinks && (
-                                                            <div className="links">
+                                                    <div className="flex items-center justify-start flex-wrap gap-1 py-2">
+                                                        {settings?.islinks && (
+                                                            <div className="links" onClick={() => handleSample()}>
                                                                 <p>Links</p>
                                                             </div>
                                                         )}
-                                                        {accBST?.istagging && (
+                                                        {settings?.istagging && (
                                                             <div className="taggings">
                                                                 <p>Taggings</p>
                                                             </div>
                                                         )}
+                                                        {/* Delete button for the card */}
+                                                        <button
+                                                            onClick={() => handleDeleteTask(displayedIndex, i)}
+                                                            className="delete-task-button"
+                                                        >
+                                                            Delete Card
+                                                        </button>
+                                                        <div className="next_prev flex items-center justify-center gap-1">
+                                                            {displayedIndex >= 0 &&
+                                                            
+                                                                <div 
+                                                                    className="svg-card flex items-center justify-center"
+                                                                    onClick={() => handlePreviousTaskCategory(displayedIndex, i)}
+                                                                >
+                                                                    <svg width="22" height="15" viewBox="0 0 22 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                    <path d="M20.9609 7.5918C20.9609 6.38113 20.6426 5.2858 20.0059 4.3058C19.3686 3.3258 18.5299 2.60513 17.4899 2.1438C17.3593 2.07446 17.2559 1.9788 17.1799 1.8568C17.1033 1.73546 17.0893 1.60746 17.1379 1.4728C17.1866 1.33413 17.2816 1.2418 17.4229 1.1958C17.5643 1.1498 17.7003 1.1548 17.8309 1.2108C19.2589 1.85213 20.3043 2.77613 20.9669 3.9828C21.6296 5.19013 21.9609 6.39313 21.9609 7.5918C21.9609 8.78646 21.6326 9.98646 20.9759 11.1918C20.3193 12.3971 19.2786 13.3205 17.8539 13.9618C17.7233 14.0178 17.5866 14.0235 17.4439 13.9788C17.3013 13.9341 17.2033 13.8428 17.1499 13.7048C17.0973 13.5741 17.1083 13.4478 17.1829 13.3258C17.2569 13.2045 17.3593 13.1091 17.4899 13.0398C18.5299 12.5785 19.3686 11.8575 20.0059 10.8768C20.6419 9.8968 20.9609 8.8018 20.9609 7.5918ZM8.95994 0.591797C10.9079 0.591797 12.5616 1.2718 13.9209 2.6318C15.2803 3.9918 15.9606 5.64513 15.9619 7.5918C15.9633 9.53846 15.2833 11.1918 13.9219 12.5518C12.5606 13.9118 10.9073 14.5918 8.96194 14.5918C8.13127 14.5918 7.34394 14.4611 6.59994 14.1998C5.85594 13.9385 5.18094 13.5601 4.57494 13.0648C4.46094 12.9748 4.3976 12.8638 4.38494 12.7318C4.3716 12.5998 4.42027 12.4788 4.53094 12.3688C4.6376 12.2621 4.76094 12.2101 4.90094 12.2128C5.04094 12.2155 5.16994 12.2615 5.28794 12.3508C5.80127 12.7435 6.36327 13.0485 6.97394 13.2658C7.5846 13.4831 8.24727 13.5918 8.96194 13.5918C10.6286 13.5918 12.0453 13.0085 13.2119 11.8418C14.3786 10.6751 14.9619 9.25846 14.9619 7.5918C14.9619 5.92513 14.3786 4.50846 13.2119 3.3418C12.0453 2.17513 10.6286 1.5918 8.96194 1.5918C8.24794 1.5918 7.58527 1.70046 6.97394 1.9178C6.36327 2.13513 5.80127 2.4398 5.28794 2.8318C5.16994 2.9218 5.04094 2.96813 4.90094 2.9708C4.76094 2.97346 4.6376 2.92146 4.53094 2.8148C4.42094 2.7048 4.37227 2.58346 4.38494 2.4508C4.3976 2.31813 4.46094 2.20746 4.57494 2.1188C5.1816 1.62346 5.8566 1.24513 6.59994 0.983797C7.34327 0.722464 8.12927 0.591797 8.95994 0.591797ZM1.95394 7.0918H9.34594C9.48794 7.0918 9.60694 7.13946 9.70294 7.2348C9.79827 7.33013 9.84594 7.44913 9.84594 7.5918C9.84594 7.73446 9.79827 7.85346 9.70294 7.9488C9.6076 8.04413 9.4886 8.0918 9.34594 8.0918H1.95394L3.69994 9.8378C3.79327 9.93113 3.84327 10.0458 3.84994 10.1818C3.8566 10.3178 3.8066 10.4391 3.69994 10.5458C3.59327 10.6525 3.47527 10.7058 3.34594 10.7058C3.2166 10.7058 3.0986 10.6525 2.99194 10.5458L0.603937 8.1578C0.441936 7.9958 0.360937 7.80713 0.360937 7.5918C0.360937 7.37646 0.441936 7.1878 0.603937 7.0258L2.99194 4.6378C3.08527 4.54446 3.19994 4.49446 3.33594 4.4878C3.47194 4.48113 3.59327 4.53113 3.69994 4.6378C3.8066 4.74446 3.85994 4.86246 3.85994 4.9918C3.85994 5.12113 3.8066 5.23913 3.69994 5.3458L1.95394 7.0918Z" fill="#fff"/>
+                                                                    </svg>
+                                                                </div>
+                                                            }
+
+                                                            {displayedIndex < selectedBoard.taskList.length - 1 && (
+                                                                <div 
+                                                                    className="svg-card flex items-center justify-center"
+                                                                    onClick={() => handleNextTaskCategory(displayedIndex, i)}
+                                                                >
+                                                                    <svg width="22" height="15" viewBox="0 0 22 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <path d="M1.03906 7.5918C1.03906 8.80246 1.3574 9.8978 1.99406 10.8778C2.6314 11.8578 3.47006 12.5785 4.51006 13.0398C4.64073 13.1091 4.74406 13.2048 4.82006 13.3268C4.89673 13.4481 4.91073 13.5761 4.86206 13.7108C4.8134 13.8495 4.7184 13.9418 4.57706 13.9878C4.43573 14.0338 4.29973 14.0288 4.16906 13.9728C2.74106 13.3315 1.69573 12.4075 1.03306 11.2008C0.370396 9.99346 0.0390625 8.79046 0.0390625 7.5918C0.0390625 6.39713 0.367396 5.19713 1.02406 3.9918C1.68073 2.78646 2.7214 1.86313 4.14606 1.2218C4.27673 1.1658 4.4134 1.16013 4.55606 1.2048C4.69873 1.24946 4.79673 1.3408 4.85006 1.4788C4.90273 1.60946 4.89173 1.7358 4.81706 1.8578C4.74306 1.97913 4.64073 2.07446 4.51006 2.1438C3.47006 2.60513 2.6314 3.32613 1.99406 4.3068C1.35806 5.2868 1.03906 6.3818 1.03906 7.5918ZM13.0401 14.5918C11.0921 14.5918 9.4384 13.9118 8.07906 12.5518C6.71973 11.1918 6.0394 9.53846 6.03806 7.5918C6.03673 5.64513 6.71673 3.9918 8.07806 2.6318C9.4394 1.2718 11.0927 0.591797 13.0381 0.591797C13.8687 0.591797 14.6561 0.722464 15.4001 0.983797C16.1441 1.24513 16.8191 1.62346 17.4251 2.1188C17.5391 2.2088 17.6024 2.3198 17.6151 2.4518C17.6284 2.5838 17.5797 2.7048 17.4691 2.8148C17.3624 2.92146 17.2391 2.97346 17.0991 2.9708C16.9591 2.96813 16.8301 2.92213 16.7121 2.8328C16.1987 2.44013 15.6367 2.13513 15.0261 1.9178C14.4154 1.70046 13.7527 1.5918 13.0381 1.5918C11.3714 1.5918 9.95473 2.17513 8.78806 3.3418C7.6214 4.50846 7.03806 5.92513 7.03806 7.5918C7.03806 9.25846 7.6214 10.6751 8.78806 11.8418C9.95473 13.0085 11.3714 13.5918 13.0381 13.5918C13.7521 13.5918 14.4147 13.4831 15.0261 13.2658C15.6367 13.0485 16.1987 12.7438 16.7121 12.3518C16.8301 12.2618 16.9591 12.2155 17.0991 12.2128C17.2391 12.2101 17.3624 12.2621 17.4691 12.3688C17.5791 12.4788 17.6277 12.6001 17.6151 12.7328C17.6024 12.8655 17.5391 12.9761 17.4251 13.0648C16.8184 13.5601 16.1434 13.9385 15.4001 14.1998C14.6567 14.4611 13.8707 14.5918 13.0401 14.5918ZM20.0461 8.0918H12.6541C12.5121 8.0918 12.3931 8.04413 12.2971 7.9488C12.2017 7.85346 12.1541 7.73446 12.1541 7.5918C12.1541 7.44913 12.2017 7.33013 12.2971 7.2348C12.3924 7.13946 12.5114 7.0918 12.6541 7.0918H20.0461L18.3001 5.3458C18.2067 5.25246 18.1567 5.1378 18.1501 5.0018C18.1434 4.8658 18.1934 4.74446 18.3001 4.6378C18.4067 4.53113 18.5247 4.4778 18.6541 4.4778C18.7834 4.4778 18.9014 4.53113 19.0081 4.6378L21.3961 7.0258C21.5581 7.1878 21.6391 7.37646 21.6391 7.5918C21.6391 7.80713 21.5581 7.9958 21.3961 8.1578L19.0081 10.5458C18.9147 10.6391 18.8001 10.6891 18.6641 10.6958C18.5281 10.7025 18.4067 10.6525 18.3001 10.5458C18.1934 10.4391 18.1401 10.3211 18.1401 10.1918C18.1401 10.0625 18.1934 9.94446 18.3001 9.8378L20.0461 8.0918Z" fill="#fff"/>
+                                                                    </svg>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -310,7 +588,7 @@ const BoardSelect = () => {
                                             className="cursor-pointer hover:bg-gray-400"
                                             onClick={() =>
                                                 toggleCategory(currentCategoryTitle)
-                                            } // close input when clicking "X"
+                                            }
                                         >
                                             X
                                         </h5>

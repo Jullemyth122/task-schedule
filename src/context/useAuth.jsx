@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, googleProvider, facebookProvider, db } from '../utilities/firebase';
 import { 
   createUserWithEmailAndPassword, 
+  sendPasswordResetEmail, 
   signInWithEmailAndPassword, 
   signInWithPopup, 
   updateProfile 
@@ -58,6 +59,12 @@ export const AuthProvider = ({ children }) => {
         console.log("User signed in:", email);
         
         localStorage.setItem("user", JSON.stringify(user));
+
+        setEmail("")
+        setPassword("")
+        setUsername("")
+        setErrorMessage("")
+        setSuccessMessage("")
         } catch (error) {
             setErrorMessage(error.message);
             setSuccessMessage("");
@@ -79,6 +86,11 @@ export const AuthProvider = ({ children }) => {
 
         setSuccessMessage("Account created successfully!");
         console.log("User signed up:", username, email);
+        setEmail("")
+        setPassword("")
+        setUsername("")
+        setErrorMessage("")
+        setSuccessMessage("")
         } catch (error) {
         setErrorMessage(error.message);
         setSuccessMessage("");
@@ -104,8 +116,12 @@ export const AuthProvider = ({ children }) => {
             await saveUserData(user, username);
         }
 
-        setSuccessMessage("Google sign-in successful!");
-        setErrorMessage("");
+
+        setEmail("")
+        setPassword("")
+        setUsername("")
+        setErrorMessage("")
+        setSuccessMessage("")
         localStorage.setItem("user", JSON.stringify(user));
         console.log("Google sign-in successful:", user);
         } catch (error) {
@@ -133,8 +149,11 @@ export const AuthProvider = ({ children }) => {
             await saveUserData(user, username);
         }
 
-        setSuccessMessage("Facebook sign-in successful!");
-        setErrorMessage("");
+        setEmail("")
+        setPassword("")
+        setUsername("")
+        setErrorMessage("")
+        setSuccessMessage("")
         localStorage.setItem("user", JSON.stringify(user));
         console.log("Facebook sign-in successful:", user);
         } catch (error) {
@@ -142,6 +161,20 @@ export const AuthProvider = ({ children }) => {
         setSuccessMessage("");
         }
     };
+
+    // New function: handleResetPassword
+    const handleResetPassword = async (emailForReset) => {
+        try {
+            await sendPasswordResetEmail(auth, emailForReset);
+            setSuccessMessage("Password reset email sent. Please check your inbox.");
+            setErrorMessage("");
+        } catch (error) {
+            setErrorMessage(error.message);
+            setSuccessMessage("");
+            throw error;
+        }
+    };
+
 
     const signOut = async () => {
         try {
@@ -158,6 +191,7 @@ export const AuthProvider = ({ children }) => {
         signOut,
         handleGoogleLogin,
         handleFacebookLogin,
+        handleResetPassword,
         username,
         email,
         password,

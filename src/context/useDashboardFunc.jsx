@@ -12,6 +12,8 @@ const DashboardProvider = ({ children }) => {
 
     const [createBoard, setCreateBoard] = useState();
     const [IsCreateBoard, setIsCreateBoard] = useState(false);
+    const [successMessage, setSuccessMessage] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(false);
 
     const [boardAttr, setBoardAttr] = useState({
         boardTitle: '',
@@ -34,24 +36,46 @@ const DashboardProvider = ({ children }) => {
     const handleCreateBoard = async (e, user, board) => {
         e.preventDefault();
 
-        try {
-            await saveUserBoardData(user, board);
-            // After saving, fetch the updated boards
-            const boards = await fetchUserBoards();
+        if (!board.boardTitle.trim() || !board.boardTemplate.trim()) {
+            setErrorMessage("Board Title and Board Template are required.");
+            setTimeout(() => {
+                setErrorMessage("");
+            }, 3000);
+            return; 
+        }
 
-            console.log(boards)
-            setUserBoards(boards); // Update the boards state
+        try {
+            
+            await saveUserBoardData(user, board);
+            const boards = await fetchUserBoards();
+            setUserBoards(boards);
+
+            setSuccessMessage("Board created successfully!");
+            setTimeout(() => {
+                setSuccessMessage("");
+            }, 3000);
+
+            setBoardAttr({
+                boardTitle: "",
+                boardVisibility: "",
+                boardTemplate: "",
+            });
         } catch (error) {
-            throw new Error(error);
+            setErrorMessage("Error creating board. Please try again.");
+            setTimeout(() => {
+                setErrorMessage("");
+            }, 3000);
         }
     };
 
+      
     const value = {
         createBoard, setCreateBoard,
         IsCreateBoard, setIsCreateBoard,
         boardAttr, setBoardAttr,
         userBoards, setUserBoards, // Pass the boards to the context
-        handleCreateBoard
+        handleCreateBoard, successMessage, 
+        errorMessage
     };
 
     return (

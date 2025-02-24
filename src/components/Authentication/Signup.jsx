@@ -21,38 +21,40 @@ const Signup = () => {
         handleLogin,
         handleGoogleLogin,
         handleFacebookLogin,
+        handleResetPassword,
 
         username,email,password,
         setUsername,setEmail,setPassword,
-        errorMessage,
-        successMessage
+        errorMessage, setErrorMessage,
+        successMessage, setSuccessMessage
     } = useAuth()
 
-    const ctx = useRef(() => gsap.context({}))
-    const signUpRef = useRef()
-    const signInRef = useRef()
-
-    const [isSignIn, setIsSignIn] = useState(false);
+    const [emailForReset, setEmailForReset] = useState("");
 
     const containerRef = useRef();
 
-    const toggleView = (signIn) => {
-        const items = containerRef.current.querySelectorAll('.label-inputs');
-        const currentViewIndex = signIn == "SignUp" ? false : true; // 0 for Sign In, 1 for Sign Up
+    const [activeView, setActiveView] = useState("SignUp");
 
-        gsap.to(items[0], { xPercent: currentViewIndex ? -100 : 0, duration: 0.5 });
-        gsap.to(items[1], { xPercent: currentViewIndex ? 0 : 100, duration: 0.5 });
+    const toggleView = (view) => {
+          const items = containerRef.current.querySelectorAll('.label-inputs');
+        let activeIndex = 0;
+        if (view === "SignUp") activeIndex = 0;
+        else if (view === "SignIn") activeIndex = 1;
+        else if (view === "Forget") activeIndex = 2;
         
-        setIsSignIn(currentViewIndex)
-
+        items.forEach((item, index) => {
+            gsap.to(item, { xPercent: (index - activeIndex) * 100, duration: 0.5 });
+        });
+        
+        setActiveView(view);
     };
 
     useLayoutEffect(() => {
         const items = containerRef.current.querySelectorAll('.label-inputs');
-        gsap.set(items, { xPercent: 100 });
-        gsap.set(items[0], { xPercent: 0 }); // Set initial view to Sign In
+        gsap.set(items[2], { xPercent: 200 });
+        gsap.set(items[1], { xPercent: 100 });
+        gsap.set(items[0], { xPercent: 0 }); 
 
-        // Clean up function to reset the position when component unmounts
         return () => {
             gsap.set(items, { xPercent: 0 });
         };
@@ -62,17 +64,26 @@ const Signup = () => {
     useEffect(() => {
         const signUpB = document.querySelector('.signUpButton')
         const signInB = document.querySelector('.signInButton')
+        const forgetB = document.querySelector('.forgetButton')
 
         signUpB.addEventListener('click', (e) => {
-            // signUpB.classList.remove('activehigh')
             signInB.classList.remove('activehigh')
+            forgetB.classList.remove('activehigh')
             signUpB.classList.add('activehigh');
         })
 
         signInB.addEventListener('click', (e) => {
             // signInB.classList.remove('activehigh')
+            forgetB.classList.remove('activehigh')
             signUpB.classList.remove('activehigh')
             signInB.classList.add('activehigh')
+        })
+
+        forgetB.addEventListener('click', (e) => {
+            signInB.classList.remove('activehigh')
+            signUpB.classList.remove('activehigh')
+            forgetB.classList.add('activehigh')
+
         })
 
     },[])
@@ -96,8 +107,24 @@ const Signup = () => {
         await handleFacebookLogin(e)
         navigate('/dashboard') 
     }
+
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => {
+            setSuccessMessage("");
+            }, 5000); // Clear after 3000ms (3 seconds)
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage]);
     
-    
+    useEffect(() => {
+        if (errorMessage) {
+            const timer = setTimeout(() => {
+            setErrorMessage("");
+            }, 5000); // Clear after 3000ms (3 seconds)
+            return () => clearTimeout(timer);
+        }
+    }, [errorMessage]);
     
     return (
         <div className='signup-comp flex items-center justify-center relative'>
@@ -121,17 +148,29 @@ const Signup = () => {
                             <div className="form-header">
                                 <h1 className='signUpButton activehigh' onClick={e => toggleView("SignUp")}> Sign up </h1>
                                 { 
-                                    isSignIn ? 
+                                    activeView === "SignIn" ? 
                                     <svg width="25" height="29" viewBox="0 0 25 29" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M1.89812 0.532227L0.140625 2.33223L12.3656 14.5572L0.140625 26.7822L1.89812 28.5822L15.0231 15.4572L15.9206 14.5572L15.0231 13.6572L1.89812 0.532227ZM10.6481 0.532227L8.88937 2.33223L21.1181 14.5572L8.89062 26.7822L10.6481 28.5822L23.7731 15.4572L24.6706 14.5572L23.7731 13.6572L10.6481 0.532227Z" fill="#4D89E2"/>
                                     </svg>
                                     :
                                     <svg width="22" height="25" viewBox="0 0 22 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M12.7454 23.7368C12.5582 23.9246 12.304 24.0302 12.0388 24.0306C11.7737 24.031 11.5192 23.926 11.3314 23.7388L0.363434 12.8088C0.260634 12.7066 0.179055 12.5851 0.123387 12.4512C0.06772 12.3173 0.0390625 12.1738 0.0390625 12.0288C0.0390625 11.8839 0.06772 11.7403 0.123387 11.6065C0.179055 11.4726 0.260634 11.3511 0.363434 11.2488L11.3314 0.320831C11.4238 0.22546 11.5343 0.149443 11.6563 0.0972138C11.7784 0.0449846 11.9097 0.01759 12.0425 0.0166278C12.1752 0.0156657 12.3069 0.0411554 12.4297 0.09161C12.5525 0.142065 12.664 0.216473 12.7578 0.310495C12.8516 0.404517 12.9257 0.51627 12.9758 0.639232C13.0259 0.762194 13.051 0.893903 13.0496 1.02668C13.0483 1.15945 13.0205 1.29063 12.968 1.41255C12.9154 1.53448 12.8391 1.64472 12.7434 1.73683L2.41543 12.0288L12.7434 22.3228C12.9312 22.5101 13.0368 22.7643 13.0372 23.0294C13.0376 23.2946 12.9326 23.549 12.7454 23.7368ZM20.7454 23.7368C20.6527 23.8301 20.5424 23.9041 20.421 23.9547C20.2996 24.0053 20.1694 24.0314 20.0378 24.0316C19.9063 24.0318 19.776 24.006 19.6545 23.9558C19.5329 23.9056 19.4225 23.8318 19.3294 23.7388L8.36143 12.8088C8.25863 12.7066 8.17705 12.5851 8.12139 12.4512C8.06572 12.3173 8.03706 12.1738 8.03706 12.0288C8.03706 11.8839 8.06572 11.7403 8.12139 11.6065C8.17705 11.4726 8.25863 11.3511 8.36143 11.2488L19.3294 0.320831C19.4218 0.22546 19.5323 0.149443 19.6543 0.0972138C19.7764 0.0449846 19.9077 0.01759 20.0404 0.0166278C20.1732 0.0156657 20.3049 0.0411554 20.4277 0.09161C20.5505 0.142065 20.662 0.216473 20.7558 0.310495C20.8496 0.404517 20.9237 0.51627 20.9738 0.639232C21.0239 0.762194 21.049 0.893903 21.0476 1.02668C21.0463 1.15945 21.0185 1.29063 20.966 1.41255C20.9134 1.53448 20.8371 1.64472 20.7414 1.73683L10.4134 12.0288L20.7414 22.3228C20.9292 22.5101 21.0348 22.7643 21.0352 23.0294C21.0356 23.2946 20.9326 23.549 20.7454 23.7368Z" fill="#4D89E2"/>
-                                    </svg>                                    
+                                    </svg>                                   
                                     
                                 }
                                 <h1 className='signInButton' onClick={e => toggleView("SignIn")}> Sign in </h1>
+                                { 
+                                    activeView === "Forget" ? 
+                                    <svg width="25" height="29" viewBox="0 0 25 29" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1.89812 0.532227L0.140625 2.33223L12.3656 14.5572L0.140625 26.7822L1.89812 28.5822L15.0231 15.4572L15.9206 14.5572L15.0231 13.6572L1.89812 0.532227ZM10.6481 0.532227L8.88937 2.33223L21.1181 14.5572L8.89062 26.7822L10.6481 28.5822L23.7731 15.4572L24.6706 14.5572L23.7731 13.6572L10.6481 0.532227Z" fill="#4D89E2"/>
+                                    </svg>
+                                    :
+                                    <svg width="22" height="25" viewBox="0 0 22 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12.7454 23.7368C12.5582 23.9246 12.304 24.0302 12.0388 24.0306C11.7737 24.031 11.5192 23.926 11.3314 23.7388L0.363434 12.8088C0.260634 12.7066 0.179055 12.5851 0.123387 12.4512C0.06772 12.3173 0.0390625 12.1738 0.0390625 12.0288C0.0390625 11.8839 0.06772 11.7403 0.123387 11.6065C0.179055 11.4726 0.260634 11.3511 0.363434 11.2488L11.3314 0.320831C11.4238 0.22546 11.5343 0.149443 11.6563 0.0972138C11.7784 0.0449846 11.9097 0.01759 12.0425 0.0166278C12.1752 0.0156657 12.3069 0.0411554 12.4297 0.09161C12.5525 0.142065 12.664 0.216473 12.7578 0.310495C12.8516 0.404517 12.9257 0.51627 12.9758 0.639232C13.0259 0.762194 13.051 0.893903 13.0496 1.02668C13.0483 1.15945 13.0205 1.29063 12.968 1.41255C12.9154 1.53448 12.8391 1.64472 12.7434 1.73683L2.41543 12.0288L12.7434 22.3228C12.9312 22.5101 13.0368 22.7643 13.0372 23.0294C13.0376 23.2946 12.9326 23.549 12.7454 23.7368ZM20.7454 23.7368C20.6527 23.8301 20.5424 23.9041 20.421 23.9547C20.2996 24.0053 20.1694 24.0314 20.0378 24.0316C19.9063 24.0318 19.776 24.006 19.6545 23.9558C19.5329 23.9056 19.4225 23.8318 19.3294 23.7388L8.36143 12.8088C8.25863 12.7066 8.17705 12.5851 8.12139 12.4512C8.06572 12.3173 8.03706 12.1738 8.03706 12.0288C8.03706 11.8839 8.06572 11.7403 8.12139 11.6065C8.17705 11.4726 8.25863 11.3511 8.36143 11.2488L19.3294 0.320831C19.4218 0.22546 19.5323 0.149443 19.6543 0.0972138C19.7764 0.0449846 19.9077 0.01759 20.0404 0.0166278C20.1732 0.0156657 20.3049 0.0411554 20.4277 0.09161C20.5505 0.142065 20.662 0.216473 20.7558 0.310495C20.8496 0.404517 20.9237 0.51627 20.9738 0.639232C21.0239 0.762194 21.049 0.893903 21.0476 1.02668C21.0463 1.15945 21.0185 1.29063 20.966 1.41255C20.9134 1.53448 20.8371 1.64472 20.7414 1.73683L10.4134 12.0288L20.7414 22.3228C20.9292 22.5101 21.0348 22.7643 21.0352 23.0294C21.0356 23.2946 20.9326 23.549 20.7454 23.7368Z" fill="#4D89E2"/>
+                                    </svg>                             
+                                    
+                                }
+                                <h1 className='forgetButton' onClick={e => toggleView("Forget")}> ResetPassword </h1>
                             </div>
                             <div className="slider" ref={containerRef}>
                                 <form className="label-inputs" onSubmit={handleRegister}>
@@ -228,6 +267,25 @@ const Signup = () => {
                                     {errorMessage && <p className="error-message">{errorMessage}</p>}
                                     {successMessage && <p className="success-message">{successMessage}</p>} {/* Display success message */}
 
+                                </form>
+                                <form action="" className='label-inputs' onSubmit={e => handleResetPassword(emailForReset,e)}>
+                                    <div className="label-input">
+                                        <label> Email </label>
+                                        <input
+                                        type="email"
+                                        placeholder="ex. johndoe@gmail.com"
+                                        value={emailForReset}
+                                        onChange={(e) => setEmailForReset(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="result-input grid items-center justify-evenly">
+                                        <button className="button-sign create-button">
+                                            <h5> Forget Password </h5>
+                                        </button>
+                                        {errorMessage && <p className="error-message">{errorMessage}</p>}
+                                        {successMessage && <p className="success-message">{successMessage}</p>} {/* Display success message */}
+
+                                    </div>
                                 </form>
                             </div>
                         </div>

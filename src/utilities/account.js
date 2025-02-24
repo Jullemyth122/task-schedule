@@ -13,6 +13,7 @@ const saveUserData = async (user, username) => {
             istagging:true,
             cardLimits:3,
             taskLimits:3,
+            notifications:[],
             createdAt: new Date(), // Optional: Add a timestamp
         });
         console.log("User data saved to Firestore");
