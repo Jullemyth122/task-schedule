@@ -19,6 +19,8 @@ import './scss/navigation.scss'
 import Dashboard from './components/Dashboard'
 import Board from './components/board/Board'
 import BoardSelect from './components/board/BoardSelect'
+import PrivateRoute from './components/PrivateRoute'
+import PublicRoute from './components/PublicRoute'
 
 const router = createBrowserRouter([
   {
@@ -28,15 +30,21 @@ const router = createBrowserRouter([
     children:[
       {
         path:"/home",
-        element:<Home/>,
-        // loader:<HomeLoading/>,
+        element:(
+        <PublicRoute>
+          <Home/>
+        </PublicRoute>),
         errorElement:<Error/>
       },
       {
         path:"/signup",
-        element:<Signup/>,
-        errorElement:<Error/>
+        element:(
+          <PublicRoute>
+            <Signup/>
 
+          </PublicRoute>
+        ),
+        errorElement:<Error/>
       },
       {
         path:'/settings',
@@ -45,7 +53,11 @@ const router = createBrowserRouter([
       },
       {
         path:`/dashboard`,
-        element:<Dashboard/>,
+        element:(
+        <PrivateRoute>
+          <Dashboard/>
+        </PrivateRoute>
+        ),
         children: [
           {
             path: `:itemId`, 
@@ -56,7 +68,11 @@ const router = createBrowserRouter([
       },
       {
         path:'/board',
-        element:<Board/>,
+        element:(
+          <PrivateRoute>
+            <Board/>
+          </PrivateRoute>
+        ),
         errorElement:<Error/>
       }
     ]

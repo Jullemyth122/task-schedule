@@ -1,96 +1,125 @@
-import React from 'react'
-import { useDashboardFunc } from '../../context/useDashboardFunc'
-import { Link } from 'react-router-dom'
-import { useSearch } from '../../context/useSearch'
+// Board.jsx
+import React, { useEffect, useState } from 'react';
+import { useDashboardFunc } from '../../context/useDashboardFunc';
+import { Link } from 'react-router-dom';
+import { useSearch } from '../../context/useSearch';
+import { useAuth } from '../../context/useAuth';
+import InviteWorkspace from './InviteWorkspace'; // Invite component
+import { fetchConnectedBoards } from '../../utilities/board'; // NEW helper
+import '../../scss/boardCompo.scss';
 
 const Board = ({ tempboard, setTempBoard }) => {
-
-    
     const images = [
-        '/img/s1.jpg',
-        '/img/s2.jpg',
-        '/img/s3.jpg',
-        '/img/s4.jpg',
-        '/img/s5.jpg'
+        '/img/s1.jpg', '/img/s2.jpg', 
+        '/img/s3.jpg', '/img/s4.jpg', '/img/s5.jpg'
     ];
-    const { search, setSearch, filteredBoards } = useSearch();
 
+    const { search, setSearch, filteredBoards } = useSearch();
+    const { currentUser, accBST } = useAuth(); // Get accBST from auth context
+
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [showInviteDropdown, setShowInviteDropdown] = useState(false);
+    const [connectedBoards, setConnectedBoards] = useState([]);
+
+    // Update board thumbnails when boards change
+    useEffect(() => {
+        if (filteredBoards.length > 0) {
+        const newSelectedImages = filteredBoards.map(() =>
+            images[Math.floor(Math.random() * images.length)]
+        );
+        setSelectedImages(newSelectedImages);
+        }
+    }, [filteredBoards]);
+
+    useEffect(() => {
+        // accBST is the current user's account document data
+        if (accBST && accBST.invitesEmail && accBST.invitesEmail.length > 0) {
+            fetchConnectedBoards(accBST.invitesEmail)
+                .then(boards => setConnectedBoards(boards))
+                .catch(error => console.error(error));
+        } else {
+            setConnectedBoards([]); // Clear if no inviters found
+        }
+    }, [accBST, showInviteDropdown]); 
 
     return (
         <div className='board-compo'>
-        
             <div className="headline flex items-center justify-evenly">
                 <div className="prt-1 flex items-center justify-between gap-3">
                     <div className="head-t">
-                        <h1 className='txt1'> 
-                            T 4 S K 
-                        </h1>
-                        <h1 className="txt2">
-                            T 4 S K
-                        </h1>
+                        <h1 className='txt1'> T 4 S K </h1>
+                        <h1 className="txt2"> T 4 S K </h1>
                     </div>
                     <h1> Board Workspace </h1>
                 </div>
-                <div className="prt-1">
-                    {/* <h1> Hatdog</h1> */}
-                    <button className='samp'> 
+                <div className="prt-1 relative">
+                    <button className='samp' onClick={() => setShowInviteDropdown(prev => !prev)}>
                         + Invite Workspaces
                     </button>
-                </div>
-            </div>
-
-            <div className="board-list">
-                <div className="category">
-                    <div className="selections flex items-center justify-between gap-2">
-                        <select name="" id="">
-                            <option value=""> Most Recently Active </option>
-                            {filteredBoards.map((board,index) => (
-                                <option value={board.boardTitle} key={index}>
-                                    {board.boardTitle}
-                                </option>
-                            ))}
-                        </select>
-                        <select name="" id="">
-                            <option value=""> Category Options </option>
-                        </select>
-                    </div>
-
-                    <div className="search-boards">
-                        <input 
-                            type="text" 
-                            placeholder='Search...' 
-                            onChange={e => setSearch(e.target.value)} 
-                            value={search} 
-                        />
-                    </div>
-                </div>
-
-                <div className="list-items">
-
-                    {filteredBoards.length > 0 ? (
-                        filteredBoards.map((board, index) => { 
-                            const selectedImage = images[Math.floor(Math.random() * images.length)];
-                                
-                            return (
-                            <div key={index} className="boarding-shift flex items-center justify-center relative">
-                                <Link
-                                    to={`/dashboard/${board?.id}`}
-                                    className="board-item"
-                                >
-                                    <img src={selectedImage} alt="Thumbnail" className="bg-img-title"/>
-                                    {/* <img src="./img/s1.jpg" alt="" className="bg-img-title" /> */}
-                                    <p className='text-white'>{board.boardTitle}</p>
-                                </Link>
-                            </div>
-                        )})
-                    ) : (
-                        <p>No matching boards found.</p>
+                    {showInviteDropdown && (
+                        <InviteWorkspace onClose={() => setShowInviteDropdown(false)} />
                     )}
                 </div>
             </div>
 
-        </div>
-    )
-}
+        <div className="board-list">
+            <div className="category">
+                <div className="selections flex items-center justify-between gap-2">
+                    <select name="" id="">
+                        <option value=""> Most Recently Active </option>
+                        {filteredBoards.map((board, index) => (
+                            <option value={board.boardTitle} key={index}>
+                            {board.boardTitle}
+                            </option>
+                        ))}
+                    </select>
+                    <select name="" id="">
+                        <option value=""> Category Options </option>
+                    </select>
+                </div>
+                <div className="search-boards">
+                    <input 
+                    type="text" 
+                    placeholder='Search...' 
+                    onChange={e => setSearch(e.target.value)} 
+                    value={search} 
+                    />
+                </div>
+            </div>
 
-export default Board
+            <div className="list-items">
+                {filteredBoards.length > 0 ? (
+                    filteredBoards.map((board, index) => (
+                    <div key={index} className="boarding-shift flex items-center justify-center relative">
+                        <Link to={`/dashboard/${board?.id}`} className="board-item">
+                        <img src={selectedImages[index]} alt="Thumbnail" className="bg-img-title" />
+                        <p className='text-white'>{board.boardTitle}</p>
+                        </Link>
+                    </div>
+                    ))
+                ) : (
+                    <p>No matching boards found.</p>
+                )}
+            </div>
+
+            <h5 className='text-black'>Workspace Connections</h5>
+            <div className="list-items">
+                {connectedBoards.length > 0 ? (
+                    connectedBoards.map((board, index) => (
+                    <div key={board.id || index} className="boarding-shift flex items-center justify-center relative">
+                        <Link to={`/dashboard/${board?.id}`} className="board-item">
+                        <img src={selectedImages[index]} alt="Thumbnail" className="bg-img-title" />
+                        <p className='text-white'>{board.boardTitle}</p>
+                        </Link>
+                    </div>
+                    ))
+                ) : (
+                    <p>No connected boards found.</p>
+                )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Board;

@@ -6,6 +6,7 @@ import { useDashboardFunc } from '../context/useDashboardFunc'
 import { useAuth } from '../context/useAuth';
 import Board from './board/Board';
 import BoardSelect from './board/BoardSelect';
+import { fetchUserAcc } from '../utilities/account';
 
 
 const Dashboard = ({  }) => {
@@ -17,18 +18,16 @@ const Dashboard = ({  }) => {
   
     const { currentUser  } = useAuth()
 
-    const [expandedCreate, setExpandedCreate] = useState();
-
-
     const { 
         IsCreateBoard, setIsCreateBoard,
         boardAttr,setBoardAttr,
         handleCreateBoard,
-        userBoards, successMessage, errorMessage
+        userBoards, successMessage, errorMessage, setErrorMessage
     } = useDashboardFunc()
 
     const [tempboard,setTempBoard] = useState(null)
-    const [isBoardSelect, setIsBoardSelect] = useState(false)
+    const [inviteEmail, setInviteEmail] = useState("");
+    const [inviteSearchResults, setInviteSearchResults] = useState([]);
 
     const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
     const [boardsDropdownOpen, setBoardsDropdownOpen] = useState(false);
@@ -37,7 +36,7 @@ const Dashboard = ({  }) => {
     const [othWorkspaceDropdownOpen, setOthWorkspaceDropdownOpen] = useState(false);
     
 
-    const workspaceDropdownRef = useRef(null);
+    // const workspaceDropdownRef = useRef(null);
     const boardsDropdownRef = useRef(null);
     const OthDropdownRef = useRef(null);
     const othPublicRef = useRef(null);
@@ -63,15 +62,78 @@ const Dashboard = ({  }) => {
         setOthWorkspaceDropdownOpen(prev => !prev);
     }
 
-    useEffect(() => {
-        // GSAP animation for workspace dropdown
-        if (workspaceDropdownOpen) {
-            gsap.to(workspaceDropdownRef.current, { height: "auto", opacity: 1, duration: 0.3, ease: "power2.out" });
-        } else {
-            gsap.to(workspaceDropdownRef.current, { height: 0, opacity: 0, duration: 0.3, ease: "power2.inOut" });
-        }
 
-        // GSAP animation for boards dropdown
+    // Function to search for matching accounts as you type
+    const handleInviteSearch = async (e) => {
+        const query = e.target.value;
+        setInviteEmail(query);
+        if (query.trim() === "") {
+            setInviteSearchResults([]);
+            return;
+        }
+        try {
+            const accounts = await fetchUserAcc();
+            const results = accounts.filter(acc =>
+                acc.email.toLowerCase().includes(query.toLowerCase()) &&
+                acc.email.toLowerCase() !== currentUser.email.toLowerCase() &&
+                !(boardAttr.boardInviteEmail && boardAttr.boardInviteEmail.includes(acc.email))
+            );
+            setInviteSearchResults(results);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    // Function to add the invite email if typed manually (if user clicks "Add Invite")
+    const handleAddInvite = () => {
+        if (!inviteEmail) return;
+        if (inviteEmail.toLowerCase() === currentUser.email.toLowerCase()) {
+            setErrorMessage("You cannot invite yourself.");
+            return;
+        }
+        if (boardAttr.boardInviteEmail && boardAttr.boardInviteEmail.includes(inviteEmail)) {
+            setErrorMessage("This email is already invited.");
+            return;
+        }
+        setBoardAttr((prevState) => ({
+            ...prevState,
+            boardInviteEmail: prevState.boardInviteEmail
+            ? [...prevState.boardInviteEmail, inviteEmail]
+            : [inviteEmail],
+        }));
+        setInviteEmail("");
+        setInviteSearchResults([]);
+        setErrorMessage("");
+    };
+
+    // Function to handle selection from dropdown suggestions
+    const handleSelectInviteEmail = (selectedEmail) => {
+        setBoardAttr((prevState) => ({
+            ...prevState,
+            boardInviteEmail: prevState.boardInviteEmail
+            ? [...prevState.boardInviteEmail, selectedEmail]
+            : [selectedEmail],
+        }));
+        setInviteEmail("");
+        setInviteSearchResults([]);
+    };
+
+    // Remove an invite email
+    const removeInvite = (email) => {
+        setBoardAttr((prevState) => ({
+            ...prevState,
+            boardInviteEmail: prevState.boardInviteEmail.filter((e) => e !== email),
+        }));
+    };
+
+
+    useEffect(() => {
+        // if (workspaceDropdownOpen) {
+        //     gsap.to(workspaceDropdownRef.current, { height: "auto", opacity: 1, duration: 0.3, ease: "power2.out" });
+        // } else {
+        //     gsap.to(workspaceDropdownRef.current, { height: 0, opacity: 0, duration: 0.3, ease: "power2.inOut" });
+        // }
+
         if (boardsDropdownOpen) {
             gsap.to(boardsDropdownRef.current, { height: "auto", opacity: 1, duration: 0.3, ease: "power2.out" });
         } else {
@@ -97,7 +159,7 @@ const Dashboard = ({  }) => {
         }
 
     }, [
-        workspaceDropdownOpen, 
+        // workspaceDropdownOpen, 
         boardsDropdownOpen,
         othDropdownOpen,
         othPublicDropdownOpen,
@@ -106,25 +168,40 @@ const Dashboard = ({  }) => {
 
     const handleShowBoardClick = (e) => {
         setTempBoard(false);
-      }
+    }
       
 
-      const [currentPage, setCurrentPage] = useState(0);
-      const [currentPage2, setCurrentPage2] = useState(0);
-      const [currentPage3, setCurrentPage3] = useState(0);
-      const itemsPerPage = 5; // Only show 5 items per page
+    const [currentPage, setCurrentPage] = useState(0);
+    const [currentPage2, setCurrentPage2] = useState(0);
+    const [currentPage3, setCurrentPage3] = useState(0);
+    const itemsPerPage = 5; // Only show 5 items per page
+    
+    const filteredBoards = userBoards?.filter(board => board.email === currentUser?.email);
+    const filteredWorldBoards = userBoards?.filter(board => board.boardVisibility === "Public");
+    
+    // Show only workspace boards where either the board owner is the current user, or the boardInviteEmail array includes the current user's email.
+    // const filteredWorkspaceBoards = userBoards?.filter(board =>
+    //     board.boardVisibility === "Workspace" &&
+    //     (board.email === currentUser?.email &&
+    //     (board.boardInviteEmail && board.boardInviteEmail.includes(currentUser?.email)))
+    // );
+
+    const filteredWorkspaceBoards = userBoards?.filter(board =>
+        board.boardVisibility === "Workspace" &&
+        board.email !== currentUser?.email && // Exclude boards owned by the current user
+        board.boardInviteEmail &&
+        board.boardInviteEmail.includes(currentUser.email)
+      );
       
-      const filteredBoards = userBoards?.filter(board => board.email === currentUser.email);
-      const filteredWorldBoards = userBoards?.filter(board => board.boardVisibility === "Public");
-      const filteredWorkspaceBoards = userBoards?.filter(board => board.boardVisibility === "Workspace");
-      
-      const totalPages = Math.ceil(filteredBoards.length / itemsPerPage);
-      const totalPagesWorld = Math.ceil(filteredWorldBoards.length / itemsPerPage);
-      const totalPagesWorkspace = Math.ceil(filteredWorkspaceBoards.length / itemsPerPage);
-      const paginatedBoards = filteredBoards.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-      const paginatedWorldBoards = filteredWorldBoards.slice(currentPage2 * itemsPerPage, (currentPage2 + 1) * itemsPerPage);
-      const paginatedWorkspaceBoards = filteredWorkspaceBoards.slice(currentPage3 * itemsPerPage, (currentPage3 + 1) * itemsPerPage);
-      
+
+        
+    const totalPages = Math.ceil(filteredBoards.length / itemsPerPage);
+    const totalPagesWorld = Math.ceil(filteredWorldBoards.length / itemsPerPage);
+    const totalPagesWorkspace = Math.ceil(filteredWorkspaceBoards.length / itemsPerPage);
+    const paginatedBoards = filteredBoards.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+    const paginatedWorldBoards = filteredWorldBoards.slice(currentPage2 * itemsPerPage, (currentPage2 + 1) * itemsPerPage);
+    const paginatedWorkspaceBoards = filteredWorkspaceBoards.slice(currentPage3 * itemsPerPage, (currentPage3 + 1) * itemsPerPage);
+    
 
 
     return (
@@ -144,7 +221,7 @@ const Dashboard = ({  }) => {
                             <h1 className='text-2xl main-title slash'> Board </h1>
                         </Link>
 
-                        <div className="sidenav-ulx">
+                        {/* <div className="sidenav-ulx">
                             <div className="sidenav-ulx-head flex items-center justify-between slash">
                                 <h1> Workspace Views </h1>
                                 <svg onClick={toggleWorkspaceDropdown} className='drop-svg' width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -153,12 +230,12 @@ const Dashboard = ({  }) => {
                             </div>
 
                             <div className="dropdown-ulx" ref={workspaceDropdownRef}>
-                                {/* <p> Table </p>
+                                <p> Table </p>
                                 <p> Calendar </p>
-                                <p> Ganchart </p> */}
+                                <p> Ganchart </p>
                             </div>
                             
-                        </div>
+                        </div> */}
 
                         <div className="sidenav-ulx relative">
 
@@ -191,7 +268,7 @@ const Dashboard = ({  }) => {
                                             <h2>Create Board</h2>
                                             <button className="close-btn" onClick={() => setIsCreateBoard(false)}>
                                                 <svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill-rule="evenodd" clip-rule="evenodd" d="M17 4.5918H14V1.5918C14 1.32658 13.8946 1.07223 13.7071 0.88469C13.5196 0.697154 13.2652 0.591797 13 0.591797C12.7348 0.591797 12.4804 0.697154 12.2929 0.88469C12.1054 1.07223 12 1.32658 12 1.5918V4.5918C12 5.12223 12.2107 5.63094 12.5858 6.00601C12.9609 6.38108 13.4696 6.5918 14 6.5918H17C17.2652 6.5918 17.5196 6.48644 17.7071 6.2989C17.8946 6.11137 18 5.85701 18 5.5918C18 5.32658 17.8946 5.07223 17.7071 4.88469C17.5196 4.69715 17.2652 4.5918 17 4.5918ZM4 6.5918C4.53043 6.5918 5.03914 6.38108 5.41421 6.00601C5.78929 5.63094 6 5.12223 6 4.5918V1.5918C6 1.32658 5.89464 1.07223 5.70711 0.88469C5.51957 0.697154 5.26522 0.591797 5 0.591797C4.73478 0.591797 4.48043 0.697154 4.29289 0.88469C4.10536 1.07223 4 1.32658 4 1.5918V4.5918H1C0.734784 4.5918 0.48043 4.69715 0.292893 4.88469C0.105357 5.07223 0 5.32658 0 5.5918C0 5.85701 0.105357 6.11137 0.292893 6.2989C0.48043 6.48644 0.734784 6.5918 1 6.5918H4ZM4 14.5918H1C0.734784 14.5918 0.48043 14.4864 0.292893 14.2989C0.105357 14.1114 0 13.857 0 13.5918C0 13.3266 0.105357 13.0722 0.292893 12.8847C0.48043 12.6972 0.734784 12.5918 1 12.5918H4C4.53043 12.5918 5.03914 12.8025 5.41421 13.1776C5.78929 13.5527 6 14.0614 6 14.5918V17.5918C6 17.857 5.89464 18.1114 5.70711 18.2989C5.51957 18.4864 5.26522 18.5918 5 18.5918C4.73478 18.5918 4.48043 18.4864 4.29289 18.2989C4.10536 18.1114 4 17.857 4 17.5918V14.5918ZM14 12.5918C13.4696 12.5918 12.9609 12.8025 12.5858 13.1776C12.2107 13.5527 12 14.0614 12 14.5918V17.5918C12 17.857 12.1054 18.1114 12.2929 18.2989C12.4804 18.4864 12.7348 18.5918 13 18.5918C13.2652 18.5918 13.5196 18.4864 13.7071 18.2989C13.8946 18.1114 14 17.857 14 17.5918V14.5918H17C17.2652 14.5918 17.5196 14.4864 17.7071 14.2989C17.8946 14.1114 18 13.857 18 13.5918C18 13.3266 17.8946 13.0722 17.7071 12.8847C17.5196 12.6972 17.2652 12.5918 17 12.5918H14Z" fill="black"/>
+                                                <path fillRule="evenodd" clipRule="evenodd" d="M17 4.5918H14V1.5918C14 1.32658 13.8946 1.07223 13.7071 0.88469C13.5196 0.697154 13.2652 0.591797 13 0.591797C12.7348 0.591797 12.4804 0.697154 12.2929 0.88469C12.1054 1.07223 12 1.32658 12 1.5918V4.5918C12 5.12223 12.2107 5.63094 12.5858 6.00601C12.9609 6.38108 13.4696 6.5918 14 6.5918H17C17.2652 6.5918 17.5196 6.48644 17.7071 6.2989C17.8946 6.11137 18 5.85701 18 5.5918C18 5.32658 17.8946 5.07223 17.7071 4.88469C17.5196 4.69715 17.2652 4.5918 17 4.5918ZM4 6.5918C4.53043 6.5918 5.03914 6.38108 5.41421 6.00601C5.78929 5.63094 6 5.12223 6 4.5918V1.5918C6 1.32658 5.89464 1.07223 5.70711 0.88469C5.51957 0.697154 5.26522 0.591797 5 0.591797C4.73478 0.591797 4.48043 0.697154 4.29289 0.88469C4.10536 1.07223 4 1.32658 4 1.5918V4.5918H1C0.734784 4.5918 0.48043 4.69715 0.292893 4.88469C0.105357 5.07223 0 5.32658 0 5.5918C0 5.85701 0.105357 6.11137 0.292893 6.2989C0.48043 6.48644 0.734784 6.5918 1 6.5918H4ZM4 14.5918H1C0.734784 14.5918 0.48043 14.4864 0.292893 14.2989C0.105357 14.1114 0 13.857 0 13.5918C0 13.3266 0.105357 13.0722 0.292893 12.8847C0.48043 12.6972 0.734784 12.5918 1 12.5918H4C4.53043 12.5918 5.03914 12.8025 5.41421 13.1776C5.78929 13.5527 6 14.0614 6 14.5918V17.5918C6 17.857 5.89464 18.1114 5.70711 18.2989C5.51957 18.4864 5.26522 18.5918 5 18.5918C4.73478 18.5918 4.48043 18.4864 4.29289 18.2989C4.10536 18.1114 4 17.857 4 17.5918V14.5918ZM14 12.5918C13.4696 12.5918 12.9609 12.8025 12.5858 13.1776C12.2107 13.5527 12 14.0614 12 14.5918V17.5918C12 17.857 12.1054 18.1114 12.2929 18.2989C12.4804 18.4864 12.7348 18.5918 13 18.5918C13.2652 18.5918 13.5196 18.4864 13.7071 18.2989C13.8946 18.1114 14 17.857 14 17.5918V14.5918H17C17.2652 14.5918 17.5196 14.4864 17.7071 14.2989C17.8946 14.1114 18 13.857 18 13.5918C18 13.3266 17.8946 13.0722 17.7071 12.8847C17.5196 12.6972 17.2652 12.5918 17 12.5918H14Z" fill="black"/>
                                                 </svg>
                                             </button>
                                         </header>
@@ -257,6 +334,46 @@ const Dashboard = ({  }) => {
                                                 }))
                                             }
                                         />
+
+                                        {boardAttr.boardVisibility === "Workspace" && (
+                                        <div className="invite-members">
+                                            <label>Invite Workspace Members (minimum 2 required)</label>
+                                            <div className="invite-input-group" style={{ position: "relative" }}>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter email to invite..."
+                                                    value={inviteEmail}
+                                                    onChange={handleInviteSearch}
+                                                />
+                                                <button type="button" onClick={handleAddInvite}>Add Invite</button>
+                                                {/* Dropdown with search suggestions */}
+                                                {inviteSearchResults.length > 0 && (
+                                                    <div className="invite-search-dropdown">
+                                                    {inviteSearchResults.map((result, idx) => (
+                                                        <div
+                                                        key={idx}
+                                                        className="invite-search-item"
+                                                        onClick={() => handleSelectInviteEmail(result.email)}
+                                                        >
+                                                        {result.username} ({result.email})
+                                                        </div>
+                                                    ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="invite-list">
+                                                {boardAttr.boardInviteEmail &&
+                                                    boardAttr.boardInviteEmail.map((email, idx) => (
+                                                    <div key={idx} className="invite-item">
+                                                        <span>{email}</span>
+                                                        <button type="button" onClick={() => removeInvite(email)}>Remove</button>
+                                                    </div>
+                                                    ))
+                                                }
+                                            </div>
+                                        </div>
+                                        )}
+
                                     </div>
                                     <footer className="modal-footer">
                                         <button

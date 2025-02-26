@@ -24,8 +24,8 @@ const TaskLayout = () => {
             )}
 
             <main>
-                <Outlet /> {/* This will render the child route's component */}
-                {isNavHomePath && <Home />} {/* Conditionally render Home */}
+                <Outlet /> 
+                {isNavHomePath && <Home />} 
             </main>
             
         </div>

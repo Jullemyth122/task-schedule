@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, setDoc } from "firebase/firestore";
+import { collection, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import { db } from './firebase'; // Ensure that db is imported
 
 // Function to save user data to Firestore
@@ -14,16 +14,18 @@ const saveUserData = async (user, username) => {
             cardLimits:3,
             taskLimits:3,
             notifications:[],
+            updates:"", 
+            isPremiumUser:false,
+            ratePremium:0,
+            PremiumPrice:0,
+            invitesEmail:[],
+            updatedAt: new Date(),
             createdAt: new Date(), // Optional: Add a timestamp
         });
-        console.log("User data saved to Firestore");
     } catch (error) {
         console.error("Error saving user data: ", error);
     }
 };
-
-// Export the saveUserData function
-export { saveUserData };
 
 const fetchUserAcc = async() => {
     try {
@@ -32,7 +34,6 @@ const fetchUserAcc = async() => {
             ...doc.data(),
             id:doc.id
         }))
-        console.log(accounts)
         return accounts;
     } catch (error) {
         console.error("Error fetching accounts: ", error);
@@ -40,4 +41,17 @@ const fetchUserAcc = async() => {
     }
 }
 
-export { fetchUserAcc }
+const updateAccountActivity = async (userId, message) => {
+    try {
+        const accountRef = doc(db, "account", userId);
+        await updateDoc(accountRef, {
+            updates: message,
+            updatedAt: new Date(),
+        });
+    } catch (error) {
+        console.error("Error updating account activity:", error);
+    }
+};
+  
+
+export { fetchUserAcc, saveUserData, updateAccountActivity }

@@ -10,7 +10,6 @@ const Navigation = () => {
     const [showNotifs, setShowNotifs] = useState(false);
     const navigate = useNavigate();
   
-    // Listen to Firebase auth state changes
     useEffect(() => {
         const auth = getAuth();
         const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -23,7 +22,6 @@ const Navigation = () => {
         return () => unsubscribe();
     }, []);
   
-    // Fetch notifications for the current user from their account document
     useEffect(() => {
         if (user) {
             const fetchNotifications = async () => {
@@ -32,7 +30,6 @@ const Navigation = () => {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        console.log(data)
                         setNotifications(data.notifications || []);
                     }
                 } catch (err) {
@@ -54,7 +51,6 @@ const Navigation = () => {
         }
     };
   
-    // Helper function to assign a color based on the notification status
     const getColor = (status) => {
         switch (status) {
             case 'red':
