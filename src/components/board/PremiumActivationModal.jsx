@@ -6,13 +6,11 @@ const PremiumActivationModal = ({ userUid, onClose, onUpgrade }) => {
     const handleUpgrade = async (tier) => {
         let updatedData = { isPremiumUser: true };
         if (tier === "basic") {
-            updatedData.cardLimits = 3; 
-            updatedData.taskLimits = 3;
             updatedData.ratePremium = 1;
             updatedData.PremiumPrice = 4.99;
         } else if (tier === "medium") {
-            updatedData.cardLimits = 10;
-            updatedData.taskLimits = 10;
+            updatedData.cardLimits = 100;
+            updatedData.taskLimits = 100;
             updatedData.ratePremium = 2;
             updatedData.PremiumPrice = 9.99;
         } else if (tier === "pro") {
@@ -53,7 +51,7 @@ const PremiumActivationModal = ({ userUid, onClose, onUpgrade }) => {
                     >
                         <h3>Medium</h3>
                         <p>
-                        Custom colors plus card and task limits up to <strong>10</strong>.
+                        Custom colors plus card and task limits up to <strong>100</strong>.
                         </p>
                         <p className="price">Price: $9.99/month</p>
                     </div>

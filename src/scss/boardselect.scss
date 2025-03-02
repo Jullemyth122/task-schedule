@@ -14,7 +14,7 @@
         .board-select {
             width: 100%;
             height: calc(100vh - 30px);
-            background: linear-gradient(to bottom, #d9cd6c71, #2471e468);
+            background: linear-gradient(to bottom, var(--bs-bg-light), var(--bs-bg-dark));
             position: relative;
             z-index: 2;
 
@@ -115,7 +115,7 @@
                 }
 
                 .close-btn {
-                    background: linear-gradient(to right, #d9cd6c71, #2471e468);
+                    background: linear-gradient(to right, var(--bs-bg-light), var(--bs-bg-dark));
                     border: none;
                     border-radius: 8px;
                     color: #fff;
@@ -135,7 +135,7 @@
             .headline {
 
                 padding: 10px;
-                background: #78a7ffc7;
+                background: var(--bs-hdl-bg);
 
                 .shared-button {
 

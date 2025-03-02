@@ -18,7 +18,7 @@ const DashboardProvider = ({ children }) => {
 
     const [boardAttr, setBoardAttr] = useState({
         boardTitle: '',
-        boardVisibility: '',
+        boardVisibility: 'Private', // default
         boardTemplate: '',
         boardInviteEmail:[],
     });
@@ -38,18 +38,18 @@ const DashboardProvider = ({ children }) => {
         e.preventDefault();
       
         const missingFields = [];
-        if (!board.boardTitle.trim()) {
+        if (!board?.boardTitle?.trim()) {
             missingFields.push("Board Title");
         }
-        if (!board.boardVisibility.trim()) {
+        if (!board?.boardVisibility?.trim()) {
             missingFields.push("Board Visibility");
         }
-        if (!board.boardTemplate.trim()) {
+        if (!board?.boardTemplate?.trim()) {
             missingFields.push("Board Template");
         }
         // If the board is Workspace, check that at least 2 invite emails have been provided
-        if (board.boardVisibility === "Workspace") {
-            if (!board.boardInviteEmail || board.boardInviteEmail.length < 2) {
+        if (board?.boardVisibility === "Workspace") {
+            if (!board?.boardInviteEmail || board?.boardInviteEmail.length < 2) {
                 missingFields.push("At least 2 invite emails are required for a Workspace board");
             }
         }

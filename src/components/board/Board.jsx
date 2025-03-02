@@ -102,19 +102,19 @@ const Board = ({ tempboard, setTempBoard }) => {
                 )}
             </div>
 
-            <h5 className='text-black'>Workspace Connections</h5>
+            <h5 className='work-title'>Workspace Connections</h5>
             <div className="list-items">
                 {connectedBoards.length > 0 ? (
                     connectedBoards.map((board, index) => (
                     <div key={board.id || index} className="boarding-shift flex items-center justify-center relative">
                         <Link to={`/dashboard/${board?.id}`} className="board-item">
                         <img src={selectedImages[index]} alt="Thumbnail" className="bg-img-title" />
-                        <p className='text-white'>{board.boardTitle}</p>
+                            <p className='work-p'>{board.boardTitle}</p>
                         </Link>
                     </div>
                     ))
                 ) : (
-                    <p>No connected boards found.</p>
+                    <p className='work-p'>No connected boards found.</p>
                 )}
                 </div>
             </div>

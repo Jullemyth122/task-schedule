@@ -24,6 +24,12 @@ const Settings = () => {
         language: accBST?.language || 'en',
     });
 
+    useEffect(() => {
+        if (accBST) {
+          setPreferences((prev) => ({ ...prev, theme: accBST.theme, language: accBST.language }));
+        }
+    }, [accBST]);
+
     const [notifications, setNotifications] = useState({
         emailNotifs: accBST?.emailNotifs ?? true,
         pushNotifs: accBST?.pushNotifs ?? true,
@@ -33,6 +39,21 @@ const Settings = () => {
         const newLang = e.target.value;
         setPreferences({ ...preferences, language: newLang });
         i18n.changeLanguage(newLang);
+    };
+
+    const handleThemeChange = async (e) => {
+        const newTheme = e.target.value;
+        setPreferences((prev) => ({ ...prev, theme: newTheme }));
+
+        if (currentUser) {
+            try {
+                const adminRef = doc(db, "account", currentUser.uid);
+                await updateDoc(adminRef, { theme: newTheme });
+                console.log("Theme updated in Firestore:", newTheme);
+            } catch (error) {
+                console.error("Error updating theme in Firestore:", error);
+            }
+        }
     };
 
     const handleAccountUpdate = async (e) => {
@@ -107,6 +128,12 @@ const Settings = () => {
     }, [accBST, currentUser]);
       
 
+    // After updating preferences (or inside a useEffect)
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', preferences?.theme?.toLowerCase());
+    }, [preferences.theme]);
+      
+
     return (
         <div className="settings-page">
             <aside className="settings-sidebar">
@@ -145,7 +172,6 @@ const Settings = () => {
             </aside>
             <main className="settings-content">
                 {message && <div className="message">{message}</div>}
-
                 {selectedTab === 'account' && (
                     <section className="account-section">
                         <h2>{t("accountSettings")}</h2>
@@ -203,9 +229,7 @@ const Settings = () => {
                                 <select
                                     id="theme"
                                     value={preferences.theme}
-                                    onChange={(e) =>
-                                        setPreferences({ ...preferences, theme: e.target.value })
-                                    }
+                                    onChange={handleThemeChange}
                                 >
                                     <option value="Light">{t("Light") || "Light"}</option>
                                     <option value="Dark">{t("Dark") || "Dark"}</option>
@@ -279,7 +303,7 @@ const Settings = () => {
                                         <path d="M12.1918 1.15134C15.9731 -0.146782 20.0848 -0.111078 23.843 1.25252C25.9069 2.02515 27.7979 3.19785 29.4074 4.7033C28.8605 5.28845 28.2836 5.83533 27.7258 6.40408C26.6648 7.46319 25.6048 8.51866 24.5457 9.57048C23.4898 8.56078 22.2126 7.81171 20.816 7.38298C19.0288 6.84333 17.1274 6.80638 15.3205 7.27619C13.5136 7.74599 11.8711 8.7044 10.573 10.0463C9.44001 11.1989 8.58195 12.5926 8.06289 14.1232L2.39453 9.73455C4.42346 5.71108 7.93642 2.63344 12.1918 1.15134Z" fill="#E33629"/>
                                         <path d="M0.891789 14.082C1.19646 12.5721 1.70227 11.1098 2.3957 9.73438L8.06405 14.134C7.32253 16.3177 7.32253 18.6851 8.06405 20.8688C6.17551 22.3271 4.28606 23.7927 2.3957 25.2656C0.659779 21.8102 0.130355 17.8732 0.891789 14.082Z" fill="#F8BD00"/>
                                         <path d="M17.8469 14.2598H34.1219C34.6786 17.3139 34.528 20.455 33.6817 23.4418C32.903 26.1884 31.3905 28.6709 29.3067 30.6223C27.4774 29.1949 25.6399 27.7785 23.8106 26.3512C24.7175 25.7394 25.4916 24.9509 26.0864 24.0328C26.6813 23.1147 27.0846 22.0859 27.2723 21.0082H17.8469C17.8442 18.7605 17.8469 16.5102 17.8469 14.2598Z" fill="#587DBD"/>
-                                        <path d="M2.39258 25.266C4.28294 23.8077 6.1724 22.3421 8.06094 20.8691C8.79158 23.0134 10.1812 24.872 12.0312 26.1793C13.1852 26.9949 14.4964 27.5611 15.8813 27.8418C17.2459 28.0955 18.6455 28.0955 20.0102 27.8418C21.3708 27.6115 22.6682 27.0992 23.8191 26.3379C25.6484 27.7652 27.4859 29.1816 29.3152 30.609C27.3134 32.4293 24.873 33.6985 22.2332 34.2922C19.3195 34.9772 16.283 34.9443 13.3848 34.1965C11.0925 33.5845 8.95146 32.5055 7.0957 31.0273C5.1315 29.4679 3.52722 27.5027 2.39258 25.266Z" fill="#319F43"/>
+                                        <path d="M2.39258 25.266C4.28294 23.8077 6.1724 22.3421 8.06094 20.8691C8.79158 23.0134 10.1812 24.872 12.0312 26.1793C13.1852 26.9949 14.4964 27.5611 15.8813 27.8418C17.2459 28.0955 18.6455 28.0955 20.0102 27.8418C21.3708 27.6115 22.6682 27.0992 23.8191 26.3379C25.6484 27.7652 27.4859 29.1816 29.3152 30.609C27.3134 32.4293 24.873 33.6985 22.2332 34.2922C19.3195 34.9772 16.283 34.9443 13.3848 34.1965C11.0925 33.5845 8.95146 32.5055 7.0957 31.0273C5.1315 29.4679 3.52722 27.5027 2.39258 25.266Z" fill="#319F43"/>    
                                     </svg>
                                 </div>
                                 <div className="account-details">
@@ -299,8 +323,8 @@ const Settings = () => {
                             <div className="account-card">
                                 <div className="account-logo facebook">
                                     <svg width="33" height="33" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M30.8961 0.320312H2.10586C1.11973 0.320312 0.320312 1.11973 0.320312 2.10586V30.8961C0.320312 31.8822 1.11973 32.6816 2.10586 32.6816H30.8961C31.8822 32.6816 32.6816 31.8822 32.6816 30.8961V2.10586C32.6816 1.11973 31.8822 0.320312 30.8961 0.320312Z" fill="#3D5A98"/>
-                                    <path d="M22.6473 32.6797V20.1481H26.8527L27.4816 15.2645H22.6473V12.1473C22.6473 10.7337 23.041 9.76842 25.0672 9.76842H27.6539V5.39342C26.4013 5.26312 25.1425 5.20105 23.8832 5.20749C20.159 5.20749 17.5941 7.47702 17.5941 11.6633V15.2645H13.3887V20.1481H17.5941V32.6797H22.6473Z" fill="white"/>
+                                        <path d="M30.8961 0.320312H2.10586C1.11973 0.320312 0.320312 1.11973 0.320312 2.10586V30.8961C0.320312 31.8822 1.11973 32.6816 2.10586 32.6816H30.8961C31.8822 32.6816 32.6816 31.8822 32.6816 30.8961V2.10586C32.6816 1.11973 31.8822 0.320312 30.8961 0.320312Z" fill="#3D5A98"/>
+                                        <path d="M22.6473 32.6797V20.1481H26.8527L27.4816 15.2645H22.6473V12.1473C22.6473 10.7337 23.041 9.76842 25.0672 9.76842H27.6539V5.39342C26.4013 5.26312 25.1425 5.20105 23.8832 5.20749C20.159 5.20749 17.5941 7.47702 17.5941 11.6633V15.2645H13.3887V20.1481H17.5941V32.6797H22.6473Z" fill="white"/>            
                                     </svg>
                                 </div>
                                 <div className="account-details">

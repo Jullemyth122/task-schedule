@@ -136,9 +136,9 @@ const Signup = () => {
                         <h1 className='text-6xl my-10'> T <span className='highlight'> 4 </span>  S K </h1>
                         <h1 className='text-6xl my-10'> W e b s i t e </h1>
                         <div className="line"></div>
-                        <h1> We create a platform that will help manage <br/> your time and task &gt;&gt; work &gt;&gt; company. </h1>
+                        <h1 className='sct-l'> We create a platform that will help manage <br/> your time and task &gt;&gt; work &gt;&gt; company. </h1>
 
-                        <p> 
+                        <p className='sct-l'> 
                         © 2024 T 4 S K Site. All rights reserved.
                         </p>
                     </div>

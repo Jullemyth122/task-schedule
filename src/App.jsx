@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { 
   createBrowserRouter,
@@ -21,6 +21,7 @@ import Board from './components/board/Board'
 import BoardSelect from './components/board/BoardSelect'
 import PrivateRoute from './components/PrivateRoute'
 import PublicRoute from './components/PublicRoute'
+import { useAuth } from './context/useAuth'
 
 const router = createBrowserRouter([
   {
@@ -79,6 +80,15 @@ const router = createBrowserRouter([
   }
 ])
 function App() {
+  const { accBST } = useAuth();
+
+  useEffect(() => {
+    // If the theme is saved in accBST, update the document attribute
+    if (accBST && accBST.theme) {
+      document.documentElement.setAttribute('data-theme', accBST.theme.toLowerCase());
+    }
+  }, [accBST]);
+
   return <RouterProvider router={router} />
 }
 

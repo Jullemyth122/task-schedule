@@ -3,12 +3,14 @@
 .signup-comp {
     width: 100%;
     height: 100vh;
-    background: #FFFDF6;
+    background: var(--signup-comp);
     position: relative;
     overflow: hidden;
+
     .signup-in-comp {
         width: 80vw;
         height: 85vh;
+
         .circle {
             border-radius: 50%;
             position: absolute;
@@ -17,8 +19,9 @@
             width: 28.5vw;
             height: 28.5vw;
             filter: blur(1.5px);
-            background: radial-gradient(circle at 50% 0%, #9ACFFF, #fff39a46);
+            background: radial-gradient(circle at 50% 0%, var(--signup-shape-light), var(--signup-shape-dark));
         }
+
         .box {
             transform: rotate(45deg);
             width: 150px;
@@ -27,8 +30,9 @@
             right: -75px;
             top: 30px;
             filter: blur(1.5px);
-            background: radial-gradient(circle at 0% 100%, #9ACFFF, #fff39a46);
+            background: radial-gradient(circle at 0% 100%, var(--signup-shape-light), var(--signup-shape-dark));
         }
+
         .box_dev {
             width: 15vw;
             height: 15vw;
@@ -37,8 +41,9 @@
             bottom: -7vw;
             filter: blur(1.5px);
             border-top-left-radius: 50%;
-            background: radial-gradient(circle at 50% 0%, #9ACFFF, #fff39a46);   
+            background: radial-gradient(circle at 50% 0%, var(--signup-shape-light), var(--signup-shape-dark));
         }
+
         .sign-out-comp {
             padding: 20px;
             gap: 15px;
@@ -46,8 +51,8 @@
             position: relative;
             width: 100%;
             height: 100%;
-            background: linear-gradient(to top, #99925c62, #fff39a5f);
-            box-shadow: 0px 1px 50px 1px #c7bb8d78;
+            background: linear-gradient(to top, var(--sign-otc-light), var(--sign-otc-dark));
+            box-shadow: 0px 1px 50px 1px var(--sign-bx-otc-light);
             border-radius: 10px;
             backdrop-filter: blur(4px);
             z-index: 2;
@@ -59,21 +64,21 @@
 
                 h1.text-6xl {
                     font-family: "Krona One", sans-serif;
-                    color: #3173B1;
+                    color: var(--sign-txt-6xl);
                 }
 
                 h1 {
                     color: #000;
 
                     span.highlight {
-                        color: #E4D34B;
+                        color: var(--sign-highlight);
                     }
                 }
 
                 .line {
                     width: 70%;
-                    height:2px;
-                    border: 2px dashed #000;
+                    height: 2px;
+                    border: 2px dashed var(--sign-dashline);
                 }
 
                 svg {
@@ -87,12 +92,16 @@
                     color: #1067b8;
                 }
 
+                .sct-l {
+                    color: var(--sign-sct);
+                }
+
             }
 
             .line {
                 width: 2px;
                 height: 100%;
-                border: 2px dashed #538FFF;
+                border: 2px dashed var(--sign-dashline2);
 
             }
 
@@ -106,15 +115,16 @@
                 overflow: hidden;
 
                 * {
-                    color: #E4D34B;
+                    color: var(--sign-si);
                 }
-                
+
                 .form-sign-up {
                     width: 100%;
                     height: 100%;
                     padding: 30px 50px;
 
                 }
+
                 .form-header {
                     display: flex;
                     align-items: center;
@@ -126,12 +136,13 @@
                         cursor: pointer;
                         transition: all 0.75s cubic-bezier(0.215, 0.610, 0.355, 1);
                     }
+
                     .activehigh {
                         font-size: 25px;
-                        cursor:default;
-                        color: #E4D34B;
+                        cursor: default;
+                        color: var(--sign-si);
                     }
-                    
+
                 }
 
                 .slider {
@@ -154,17 +165,20 @@
                     display: grid;
                     gap: 20px;
                     padding: 20px;
+
                     label {
-                        color: #538FFF;
+                        color: var(--sign-labels);
                     }
+
                     input {
                         background: none;
                         outline: none;
-                        border-bottom: 1px solid #538FFF;
-                        color: #000;
+                        border-bottom: 1px solid var(--sign-labels);
+                        color: var(--sign-input);
                         transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
                         &::placeholder {
-                            color: #000000a4;
+                            color: var(--sign-input);
                         }
 
                         &:hover {
@@ -174,14 +188,15 @@
                     }
                 }
 
-                .error-message,.success-message {
-                    color: #000;
+                .error-message,
+                .success-message {
+                    color: var(--sign-input);
                 }
 
                 .separate {
-                    color: #000;
+                    color: var(--sign-input);
                     padding: 17.5px;
-                    
+
                 }
 
                 .button-sign {
@@ -189,6 +204,7 @@
                     display: flex;
                     align-items: center;
                     justify-content: center;
+
                     svg {
                         width: 20px;
                         height: 20px;
@@ -211,17 +227,18 @@
 
                     &.create-button {
                         background: #fff;
+
                         h5 {
-                        
+
                             color: #000;
                             transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
                             // transition: all 1s ease-in-out;
                         }
-    
+
                         &:hover {
-                            background: #538FFF;
+                            background: var(--sign-labels);
                             scale: 1.15;
-    
+
                             h5 {
                                 color: #fff;
                             }
@@ -231,38 +248,40 @@
                     &.google {
                         // background: #fa3c3c;
                         background: linear-gradient(to right, #fa3c3c, #fff4a281);
-                        background-size: 150% 150%;  // Enlarge the gradient for a smooth animation effect
-                        transition: background-size 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94);  // Animate the gradient size on hover
-                    
+                        background-size: 150% 150%; // Enlarge the gradient for a smooth animation effect
+                        transition: background-size 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94); // Animate the gradient size on hover
+
                         &:hover {
-                          background-size: 100% 100%;  // Shrink the gradient on hover to animate
+                            background-size: 100% 100%; // Shrink the gradient on hover to animate
                         }
-                    
+
                     }
 
                     &.fbook {
                         background: linear-gradient(to right, #538FFF, #fff4a281);
-                        background-size: 200% 200%;  // Enlarge the gradient for a smooth animation effect
-                        transition: background-size 1s ease-in-out;  // Animate the gradient size on hover
-                    
+                        background-size: 200% 200%; // Enlarge the gradient for a smooth animation effect
+                        transition: background-size 1s ease-in-out; // Animate the gradient size on hover
+
                         &:hover {
-                          background-size: 100% 100%;  // Shrink the gradient on hover to animate
+                            background-size: 100% 100%; // Shrink the gradient on hover to animate
                         }
                     }
                 }
 
-                
+
                 .info-sign {
                     cursor: pointer;
+
                     h5 {
-                        color: #000;
+                        color: var(--sign-input);
                         padding: 10px;
                         position: relative;
+
                         &::after {
                             width: 100%;
                             content: '';
                             height: 1.5px;
-                            background: black;
+                            background: var(--sign-input);
                             position: absolute;
                             left: 0;
                             bottom: 0;
@@ -274,15 +293,17 @@
 
             .box_dev {
                 filter: blur(0px);
-                background: radial-gradient(circle at 50% 0%, #538FFF, #fff39a46);
+                background: radial-gradient(circle at 50% 0%, var(--signup-shape2-light), var(--signup-shape2-dark));
             }
+
             .box {
                 filter: blur(0px);
-                background: radial-gradient(circle at 0% 100%, #538FFF, #fff39a46);
+                background: radial-gradient(circle at 0% 100%, var(--signup-shape2-light), var(--signup-shape2-dark));
             }
+
             .circle {
                 filter: blur(0px);
-                background: radial-gradient(circle at 50% 0%, #538FFF, #fff39a46);
+                background: radial-gradient(circle at 50% 0%, var(--signup-shape2-light), var(--signup-shape2-dark));
             }
         }
     }

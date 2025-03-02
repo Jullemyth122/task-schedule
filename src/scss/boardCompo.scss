@@ -8,10 +8,10 @@
                 width: 100%;
                 // background: linear-gradient(to right, #8CBAFF, #99925c7a);
                 // background: linear-gradient(to right, #8CBAFF, #5c72997a);
-                border-bottom: 2px solid #5AB0FF;
+                border-bottom: 2px solid var(--bd-head_b);
 
                 h1 {
-                    color: #000;
+                    color: var(--sidenav-ISO);
                 }
 
                 .head-t {
@@ -36,7 +36,7 @@
                 }
 
                 .samp {
-                    background: linear-gradient(90deg, #407cd6, #5AB0FF);
+                    background: linear-gradient(90deg, var(--bd-head_b2), var(--bd-head_b));
                     background-size: 200% 100%; // Makes room for the animation
                     border-radius: 5px;
                     padding: 10px;
@@ -81,13 +81,13 @@
                             padding: 8px;
                             border: none;
                             border-radius: 4px;
-                            background: linear-gradient(90deg, #407cd6, #5AB0FF);
+                            background: linear-gradient(90deg, var(--bd-head_b2), var(--bd-head_b));
                             color: #fff;
                             cursor: pointer;
                             transition: background 0.3s ease;
 
                             &:hover {
-                                background: #407cd6;
+                                background: var(--bd-head_b2);
                             }
                         }
                     }
@@ -145,7 +145,7 @@
                         margin-top: 10px;
                         background: transparent;
                         border: none;
-                        color: #407cd6;
+                        color: var(--bd-head_b2);
                         cursor: pointer;
                         font-size: 14px;
 
@@ -163,7 +163,7 @@
 
                 .category {
                     padding: 10px;
-                    background: linear-gradient(to right, #5aafffcd, #8cbaff4f, #a4910245);
+                    background: linear-gradient(to right, var(--bd-cat-l1), var(--bd-cat-l2), var(--bd-cat-l3));
                     border-radius: 10px;
                     box-shadow: 0px 1px 3px #00000038;
                     display: flex;
@@ -177,11 +177,11 @@
                     border-radius: 7.5px;
                     padding: 10px;
                     outline: none;
-                    color: #000;
-                    background: #ffffff9f;
+                    color: var(--sidenav-ISO);
+                    background: var(--bd-inp_list);
 
                     option {
-                        color: #000;
+                        color: var(--sidenav-ISO);
                     }
                 }
 
@@ -203,7 +203,7 @@
                         z-index: 2;
                         box-shadow: 0px 2px 5px #00000038;
                         position: relative;
-                        background: linear-gradient(to right, #5aafffcd, #8cbaff4f, #a4910245);
+                        background: linear-gradient(to right, var(--bd-cat-l1), var(--bd-cat-l2), var(--bd-cat-l3));
 
                         * {
                             /* color: #000; */
@@ -233,6 +233,14 @@
 
                     }
 
+                }
+
+                .work-title {
+                    color: var(--sidenav-ISO);
+                }
+
+                .work-p {
+                    color: var(--sidenav-ISO);
                 }
 
             }

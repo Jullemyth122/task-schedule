@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Jura:wght@300..700&display=swap");
 
 .navigator-comp {
-  background: linear-gradient(to right, #d1c251, #538fff);
+  background: linear-gradient(to right, var(--bg-nav-grd-darkLight), var(--bg-nav-grd-darkDark));
   height: 70px;
   font-family: "Jura", sans-serif;
   box-shadow: 0px 1px 3px #00000062;
@@ -89,7 +89,7 @@
         right: 0;
         width: 300px;
         max-height: 400px;
-        background: linear-gradient(to right, #eae0967b, #538fffb0);
+        background: linear-gradient(to right, var(--notif-grd-light), var(--notif-grd-dark));
         border: 1px solid #ccc;
         border-radius: 8px;
         overflow-y: auto;
@@ -120,12 +120,12 @@
             p {
               margin: 0;
               font-size: 0.9rem;
-              color: #333;
+              color: var(--notif-textColor);
             }
 
             span {
               font-size: 0.8rem;
-              color: #4d4d4d;
+              color: var(--notif-textColor);
             }
           }
         }
@@ -133,7 +133,7 @@
         .no-notifs {
           text-align: center;
           font-size: 0.9rem;
-          color: #666;
+          color: var(--notif-textColor);
         }
       }
 
