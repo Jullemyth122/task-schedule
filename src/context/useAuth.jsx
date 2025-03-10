@@ -34,35 +34,45 @@ export const AuthProvider = ({ children }) => {
         return unsubscribe;
     }, []);
 
-    // Listen for real-time changes to the current user's account document in Firestore.
     useEffect(() => {
         if (currentUser) {
             const accountRef = doc(db, "account", currentUser.uid);
             const unsubscribe = onSnapshot(accountRef, (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                    const accountData = docSnapshot.data();
-                    setAccBST(accountData);
+            if (docSnapshot.exists()) {
+                const accountData = docSnapshot.data();
+                console.log("Account data:", accountData);
+                setAccBST(accountData);
+            } else {
+                // Delay the check to allow the document creation to complete
+                setTimeout(async () => {
+                const refreshedSnapshot = await getDoc(accountRef);
+                if (!refreshedSnapshot.exists()) {
+                    alert("Account data not found. You are not authorized to access this system.");
+                    signOut();
                 }
+                }, 2000); // Adjust the delay as needed
+            }
             });
             return () => unsubscribe();
         }
     }, [currentUser]);
 
+
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-        // Sign in the user with Firebase
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        setSuccessMessage("Successfully logged in!");
-        
-        localStorage.setItem("user", JSON.stringify(user));
+            // Sign in the user with Firebase
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            setSuccessMessage("Successfully logged in!");
+            
+            localStorage.setItem("user", JSON.stringify(user));
 
-        setEmail("")
-        setPassword("")
-        setUsername("")
-        setErrorMessage("")
-        setSuccessMessage("")
+            setEmail("");
+            setPassword("");
+            setUsername("");
+            setErrorMessage("");
+            setSuccessMessage("");
         } catch (error) {
             setErrorMessage(error.message);
             setSuccessMessage("");
@@ -72,53 +82,51 @@ export const AuthProvider = ({ children }) => {
     const handleSignup = async (e) => {
         e.preventDefault();
         try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
 
-        await updateProfile(user, { displayName: username });
+            await updateProfile(user, { displayName: username });
+            await saveUserData(user, username);
 
-        await saveUserData(user, username);
-
-        setSuccessMessage("Account created successfully!");
-        setEmail("")
-        setPassword("")
-        setUsername("")
-        setErrorMessage("")
-        setSuccessMessage("")
+            setSuccessMessage("Account created successfully!");
+            setEmail("");
+            setPassword("");
+            setUsername("");
+            setErrorMessage("");
+            setSuccessMessage("");
         } catch (error) {
-        setErrorMessage(error.message);
-        setSuccessMessage("");
+            setErrorMessage(error.message);
+            setSuccessMessage("");
         }
     };
 
     const handleGoogleLogin = async (e) => {
         e.preventDefault();
         try {
-        const result = await signInWithPopup(auth, googleProvider);
-        const user = result.user;
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
 
-        // Validate email
-        if (!user.email || !/\S+@\S+\.\S+/.test(user.email)) {
-            setErrorMessage("Google sign-in failed: Invalid or missing email.");
-            return;
-        }
+            // Validate email
+            if (!user.email || !/\S+@\S+\.\S+/.test(user.email)) {
+                setErrorMessage("Google sign-in failed: Invalid or missing email.");
+                return;
+            }
 
-        const accountRef = doc(db, "account", user.uid);
-        const accountSnapshot = await getDoc(accountRef);
-        if (!accountSnapshot.exists()) {
-            await saveUserData(user, username);
-        }
+            const accountRef = doc(db, "account", user.uid);
+            const accountSnapshot = await getDoc(accountRef);
+            if (!accountSnapshot.exists()) {
+                await saveUserData(user, username);
+            }
 
-
-        setEmail("")
-        setPassword("")
-        setUsername("")
-        setErrorMessage("")
-        setSuccessMessage("")
-        localStorage.setItem("user", JSON.stringify(user));
+            setEmail("");
+            setPassword("");
+            setUsername("");
+            setErrorMessage("");
+            setSuccessMessage("");
+            localStorage.setItem("user", JSON.stringify(user));
         } catch (error) {
-        setErrorMessage(error.message);
-        setSuccessMessage("");
+            setErrorMessage(error.message);
+            setSuccessMessage("");
         }
     };
 
@@ -136,21 +144,25 @@ export const AuthProvider = ({ children }) => {
 
             const accountRef = doc(db, "account", user.uid);
             const accountSnapshot = await getDoc(accountRef);
+
+            console.log(user);
             if (!accountSnapshot.exists()) {
-                await saveUserData(user, username);
+                // Use displayName from the provider if username state is empty.
+                await saveUserData(user, username || user.displayName);
             }
 
-            setEmail("")
-            setPassword("")
-            setUsername("")
-            setErrorMessage("")
-            setSuccessMessage("")
+            setEmail("");
+            setPassword("");
+            setUsername("");
+            setErrorMessage("");
+            setSuccessMessage("");
             localStorage.setItem("user", JSON.stringify(user));
         } catch (error) {
             setErrorMessage(error.message);
             setSuccessMessage("");
         }
     };
+
 
     const handleResetPassword = async (emailForReset) => {
         try {
@@ -164,12 +176,11 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-
     const signOut = async () => {
         try {
-        await auth.signOut();
+            await auth.signOut();
         } catch (error) {
-        console.error('Error signing out:', error.message);
+            console.error('Error signing out:', error.message);
         }
     };
 
@@ -191,7 +202,7 @@ export const AuthProvider = ({ children }) => {
         setErrorMessage,
         successMessage,
         setSuccessMessage,
-        accBST // current user's account data (with islinks and istagging)
+        accBST
     };
 
     return (

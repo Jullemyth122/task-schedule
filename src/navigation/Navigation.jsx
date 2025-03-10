@@ -3,30 +3,24 @@ import { Link, useNavigate } from 'react-router-dom';  // Use useNavigate from R
 import {  getAuth, signOut } from 'firebase/auth'; // Import Firebase auth
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../utilities/firebase';
+import { useAuth } from '../context/useAuth';
 
 const Navigation = () => {
-    const [user, setUser] = useState(null);
+
+    const { currentUser, accBST } = useAuth();
+
     const [notifications, setNotifications] = useState([]);
     const [showNotifs, setShowNotifs] = useState(false);
     const navigate = useNavigate();
+
+    console.log(currentUser)
+  
   
     useEffect(() => {
-        const auth = getAuth();
-        const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-            if (currentUser) {
-            setUser(currentUser);
-            } else {
-            setUser(null);
-            }
-        });
-        return () => unsubscribe();
-    }, []);
-  
-    useEffect(() => {
-        if (user) {
+        if (currentUser) {
             const fetchNotifications = async () => {
                 try {
-                    const docRef = doc(db, "account", user.uid);
+                    const docRef = doc(db, "account", currentUser.uid);
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
                         const data = docSnap.data();
@@ -38,7 +32,7 @@ const Navigation = () => {
             };
             fetchNotifications();
         }
-    }, [user]);
+    }, [currentUser]);
   
     const handleLogout = async () => {
         try {
@@ -78,7 +72,7 @@ const Navigation = () => {
                         </svg>
                         <h5 className='text-white'> Home </h5>
                     </Link>
-                    {user ? (
+                    {currentUser ? (
                     <Link className='nav-link' to={'/dashboard'}>
                         <svg width="20" height="21" viewBox="0 0 20 21" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M11.875 6.75V0.5H20V6.75H11.875ZM0 10.5V0.5H8.125V10.5H0ZM11.875 20.5V10.5H20V20.5H11.875ZM0 20.5V14.25H8.125V20.5H0ZM1.25 9.25H6.875V1.75H1.25V9.25ZM13.125 19.25H18.75V11.75H13.125V19.25ZM13.125 5.5H18.75V1.75H13.125V5.5ZM1.25 19.25H6.875V15.5H1.25V19.25Z" fill="white"/>
@@ -93,7 +87,7 @@ const Navigation = () => {
                         </svg>
                         <h5 className='text-white'> Settings </h5>
                     </Link>
-                    {user ? 
+                    {currentUser ? 
                         <>
                         <div className='nav-link'>
                             <svg className='cursor-pointer' width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -130,14 +124,14 @@ const Navigation = () => {
                             )}
                         </div>
                             <h5 className='text-white'>
-                                {user.displayName && user.displayName.length > 6 
-                                    ? `${user.displayName.substring(0, 6)}...` 
-                                    : user.displayName || user.email}
+                                {currentUser.displayName && currentUser.displayName.length > 6 
+                                    ? `${currentUser.displayName.substring(0, 6)}...` 
+                                    : currentUser.displayName || currentUser.email}
                             </h5>
                             <button onClick={handleLogout} className="text-white">Logout</button>
                         </>
                      : 
-                        // If user is not logged in, show the Signup link
+                        // If currentUser is not logged in, show the Signup link
                         <Link className='nav-link' to={'/signup'}>
                             <h5 className='normal text-white'> Signup </h5>
                         </Link>

@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore"; 
 import { db } from "../../utilities/firebase";
 import { useAuth } from "../../context/useAuth";
-import { updateAccountActivity } from "../../utilities/account";
+import { updateAccountActivity, updateAccountRequests } from "../../utilities/account";
 import { customColors } from "../../utilities/colors";
 import PremiumActivationModal from "./PremiumActivationModal";
 
@@ -35,6 +35,44 @@ const BoardSelect = () => {
     });
 
     const [boardOwner, setBoardOwner] = useState(null);
+
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [messages, setMessages] = useState([
+        { sender: 'bot', text: 'Hello! Give us a request or feedback?' }
+    ]);
+    const [inputValue, setInputValue] = useState('');
+
+    const togglePopup = () => {
+        if (isChatOpen) {
+            setMessages([{ sender: 'bot', text: 'Hello! Give us a request or feedback?' }]);
+        }
+        setIsChatOpen(!isChatOpen);
+    };
+
+    const handleSend = async () => {
+        if (inputValue.trim() === '') return;
+
+        const userMessage = { sender: 'user', text: inputValue };
+        setMessages(prev => [...prev, userMessage]);
+
+        if (accBST?.uid) {
+            try {
+                await updateAccountRequests(accBST.uid, inputValue);
+            } catch (error) {
+                console.error('Error updating account requests:', error);
+            }
+        }
+
+        setInputValue('');
+
+        setTimeout(() => {
+            setMessages(prev => [
+                ...prev,
+                { sender: 'bot', text: 'Thank you for your feedback / request!' }
+            ]);
+        }, 1000);
+    };
+    
     useEffect(() => {
         async function fetchBoardOwner() {
             if (
@@ -91,6 +129,40 @@ const BoardSelect = () => {
         : [];
 
 
+    const chunkArray = (array, chunkSize) => {
+        const result = [];
+        for (let i = 0; i < array.length; i += chunkSize) {
+            result.push(array.slice(i, i + chunkSize));
+        }
+        return result;
+    };
+
+    function getPriorityFromColor(color) {
+        // Find the index of the color in the customColors array
+        const index = customColors.findIndex(item => item.bg === color);
+        if (index === -1) return null;
+        // Each group has 10 colors.
+        return {
+            level: Math.floor(index / 10) + 1, // Priority level 1-5
+            shade: index % 10, // 0 (lightest) to 9 (darkest)
+        };
+    }
+
+
+    function getSortKey(task) {
+        if (task.color === "red") return -1000;       // Always at the very top.
+        if (task.color === "green") return 1000;        // Always at the very bottom.
+        // For default tasks (empty string), assign a key that is lower than any custom color.
+        if (!task.color || task.color.trim() === "") return 0;
+        
+        const prio = getPriorityFromColor(task.color);
+        // If a custom color is assigned, assume the lowest possible custom key is 10
+        // (because for level 1, shade 0, level*10+shade = 1*10+0 = 10)
+        return prio ? prio.level * 10 + prio.shade : 0;
+    }
+
+    const colorGroups = chunkArray(customColors, 10);
+    
         
     const handleCategoryTitleUpdate = async (categoryIndex, newTitle) => {
         if (!selectedBoard) return;
@@ -117,6 +189,7 @@ const BoardSelect = () => {
                 delete newState[categoryIndex];
                 return newState;
             });
+
             // Update account activity log.
             await updateAccountActivity(
                 settings?.uid,
@@ -183,42 +256,63 @@ const BoardSelect = () => {
 
     const handleCreateCategory = async () => {
         if (!newCategory.trim() || !selectedBoard) return;
+
         if (selectedBoard.taskList.length >= settings.taskLimits) {
-            setNewCategoryError(
-                "You have reached the maximum number of categories for this board."
-            );
+            setNewCategoryError("You have reached the maximum number of categories for this board.");
             setTimeout(() => {
-                setNewCategoryError("");
+            setNewCategoryError("");
             }, 3000);
             return;
         }
+
+        // New category has default color "".
         const newCategoryObj = {
             title: newCategory,
             tasks: [],
             taggings: [],
-            links: []
+            links: [],
+            color: ""  // default remains empty
         };
-        const updatedTaskList = [...selectedBoard.taskList, newCategoryObj];
+
+        const currentTaskList = selectedBoard.taskList;
+        let updatedTaskList = [];
+
+        // If the last task is "green" or titled "done", insert the new category before it.
+        const lastTask = currentTaskList[currentTaskList.length - 1];
+        if (lastTask && (lastTask.color === "green" || lastTask.title.toLowerCase() === "done")) {
+            updatedTaskList = [
+            ...currentTaskList.slice(0, currentTaskList.length - 1),
+            newCategoryObj,
+            lastTask
+            ];
+        } else {
+            updatedTaskList = [...currentTaskList, newCategoryObj];
+        }
+        // Sort tasks with custom logic:
+        //   red tasks get lowest sort key (-1000),
+        //   default tasks (empty color) get 0,
+        //   tasks with custom colors get keys based on their priority level (minimum 10),
+        //   green tasks get a high key (1000).
+        updatedTaskList.sort((a, b) => getSortKey(a) - getSortKey(b));
+
         try {
             const boardRef = doc(db, "boards", selectedBoard.id);
             await updateDoc(boardRef, { taskList: updatedTaskList });
             setUserBoards((prevBoards) =>
-                prevBoards.map((board) =>
-                    board.id === selectedBoard.id
-                        ? { ...board, taskList: updatedTaskList }
-                        : board
-                )
+            prevBoards.map((board) =>
+                board.id === selectedBoard.id ? { ...board, taskList: updatedTaskList } : board
+            )
             );
             setNewCategory("");
             // Update account activity log.
-            await updateAccountActivity(
-                settings?.uid,
-                "User created a new category"
-            );
+            await updateAccountActivity(settings?.uid, "User created a new category");
         } catch (error) {
             console.error("Error creating new category:", error);
         }
     };
+
+
+
 
     const handleDeleteCategory = async (categoryIndex) => {
         if (!selectedBoard) return;
@@ -284,37 +378,47 @@ const BoardSelect = () => {
 
 
     const handleChangeCategoryColor = async (categoryIndex, color, categoryTitle) => {
-        console.log("Changing color for category", categoryIndex, "to", color);
-        
-        const updatedTaskList = selectedBoard.taskList.map((task, idx) => {
-          if (idx === categoryIndex) {
-            return { ...task, color }; 
-          }
-          return task;
+        // First, update the specific task's color.
+        let updatedTaskList = selectedBoard.taskList.map((task, idx) => {
+            if (idx === categoryIndex) {
+            return { ...task, color: color };
+            }
+            return task;
         });
-        
+
+        // Separate tasks by fixed colors.
+        const redTasks = updatedTaskList.filter(task => task.color === "red");
+        const greenTasks = updatedTaskList.filter(task => task.color === "green");
+        const otherTasks = updatedTaskList.filter(task => task.color !== "red" && task.color !== "green");
+
+        // Sort the "other" tasks using our sort key.
+        otherTasks.sort((a, b) => getSortKey(a) - getSortKey(b));
+
+        // Combine: red tasks at the top, then the sorted tasks, then green tasks.
+        updatedTaskList = [...redTasks, ...otherTasks, ...greenTasks];
+
         try {
-          const boardRef = doc(db, "boards", selectedBoard.id);
-          await updateDoc(boardRef, { taskList: updatedTaskList });
-          setUserBoards((prevBoards) =>
-            prevBoards.map((board) =>
-              board.id === selectedBoard.id ? { ...board, taskList: updatedTaskList } : board
+            const boardRef = doc(db, "boards", selectedBoard.id);
+            await updateDoc(boardRef, { taskList: updatedTaskList });
+            setUserBoards(prevBoards =>
+            prevBoards.map(board =>
+                board.id === selectedBoard.id ? { ...board, taskList: updatedTaskList } : board
             )
-          );
-          await updateAccountActivity(
+            );
+            await updateAccountActivity(
             settings?.uid,
             `Apply Color ${color} in Task Category ${categoryTitle}`
-          );
+            );
         } catch (error) {
-          console.error("Error updating category color:", error);
+            console.error("Error updating category color:", error);
         }
-        
-        setColorDropdownOpen((prev) => ({
-          ...prev,
-          [categoryIndex]: false,
+        setColorDropdownOpen(prev => ({
+            ...prev,
+            [categoryIndex]: false,
         }));
     };
-      
+
+
 
     
 
@@ -424,12 +528,45 @@ const BoardSelect = () => {
                     userUid={settings?.uid}
                     onClose={() => setIsPremiumUser(false)}
                     onUpgrade={(tier) => {
-                    console.log("Upgraded to:", tier);
                     }}
                 />
                 :
                 <></>
             }
+
+            <div className="req-chat">
+                <div className={`chat-logo ${isChatOpen ? 'open' : ''}`} onClick={togglePopup}>
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M9 1.5C7.01088 1.5 5.10322 2.29018 3.6967 3.6967C2.29018 5.10322 1.5 7.01088 1.5 9C1.5 10.9891 2.29018 12.8968 3.6967 14.3033C5.10322 15.7098 7.01088 16.5 9 16.5H14.09C14.5197 16.5 14.8191 16.4998 15.0541 16.4852C15.2846 16.4709 15.4201 16.4442 15.5243 16.4055C15.7257 16.3304 15.9087 16.2128 16.0608 16.0608C16.2128 15.9087 16.3304 15.7257 16.4055 15.5243C16.4442 15.42 16.4709 15.2847 16.4852 15.0544C16.4998 14.8196 16.5 14.5202 16.5 14.09V9C16.5 7.01088 15.7098 5.10322 14.3033 3.6967C12.8968 2.29018 10.9891 1.5 9 1.5ZM2.98959 2.98959C4.58365 1.39553 6.74566 0.5 9 0.5C11.2543 0.5 13.4163 1.39553 15.0104 2.98959C16.6045 4.58365 17.5 6.74566 17.5 9V14.1061C17.5 14.5164 17.5 14.8469 17.4833 15.1163C17.4661 15.3934 17.4299 15.6385 17.3427 15.8732C17.2174 16.209 17.0213 16.5144 16.7679 16.7679C16.5144 17.0213 16.2095 17.2172 15.8737 17.3425C15.639 17.4297 15.393 17.4661 15.1159 17.4833C14.8464 17.5 14.5159 17.5 14.1061 17.5H9C6.74566 17.5 4.58365 16.6045 2.98959 15.0104C1.39553 13.4163 0.5 11.2543 0.5 9C0.5 6.74566 1.39553 4.58365 2.98959 2.98959Z" fill="black"/>
+                    <path fillRule="evenodd" clipRule="evenodd" d="M5.5 8C5.5 7.72386 5.72386 7.5 6 7.5H12C12.2761 7.5 12.5 7.72386 12.5 8C12.5 8.27614 12.2761 8.5 12 8.5H6C5.72386 8.5 5.5 8.27614 5.5 8ZM8.5 12C8.5 11.7239 8.72386 11.5 9 11.5H12C12.2761 11.5 12.5 11.7239 12.5 12C12.5 12.2761 12.2761 12.5 12 12.5H9C8.72386 12.5 8.5 12.2761 8.5 12Z" fill="black"/>
+                    </svg>
+                </div>
+                <div className={`chat-popup ${isChatOpen ? 'open' : ''}`}>
+                    <div className="chat-header">
+                        <h4>Chat</h4>
+                        <button onClick={togglePopup}>X</button>
+                    </div>
+                    <div className="chat-body">
+                        {messages.map((msg, index) => (
+                            <p key={index} className={`message ${msg.sender}`}>
+                            {msg.text}
+                            </p>
+                        ))}
+                    </div>
+                    <div className="chat-footer">
+                        <input
+                            type="text"
+                            placeholder="Type your message..."
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSend();
+                            }}
+                        />
+                        <button onClick={handleSend}>Send</button>
+                    </div>
+                </div>
+            </div>
 
             <div className="headline flex items-center justify-between">
                 <h1>{selectedBoard?.boardTitle}</h1>
@@ -473,8 +610,8 @@ const BoardSelect = () => {
 
                             // const displayTaskItems = task.tasks.slice(0, accBST.cardLimits);
                             const displayTaskItems = task.tasks.slice(0, settings?.cardLimits);
-                            const selectedColor = task.color;
-  
+                            const selectedColor = task?.color;
+
                             const bgColor = 
                             !selectedColor
                               ? "#2f2f2fc3"
@@ -485,12 +622,11 @@ const BoardSelect = () => {
                                   : selectedColor;
                           
                     return (
-                        <div className="task" key={displayedIndex} style={{ backgroundColor: bgColor }}>
+                        <div className="task" key={displayedIndex} style={{ background:`linear-gradient(to left, #ffffff4a,${bgColor})` }}>
                             <div className="td-1 relative">
                                 <input
                                     type="text"
                                     value={currentCategoryTitle}
-
                                     onChange={(e) =>
                                         setEditedCategoryTitles((prev) => ({
                                             ...prev,
@@ -499,29 +635,31 @@ const BoardSelect = () => {
                                     }
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter") {
-                                            handleCategoryTitleUpdate(
-                                                displayedIndex,
-                                                currentCategoryTitle
-                                            );
+                                            handleCategoryTitleUpdate(displayedIndex, currentCategoryTitle);
+                                            e.target.blur(); // This removes focus from the input
                                         }
                                     }}
+
                                 />
-                                
-                                <svg
-                                    onClick={() =>
-                                        setTaskDotsOpen((prev) => ({
-                                        ...prev,
-                                        [displayedIndex]: !prev[displayedIndex]
-                                        }))
-                                    }
-                                    width="17"
-                                    height="5"
-                                    viewBox="0 0 17 5"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path d="M10.0625 2.5C10.0625 2.80903 9.97086 3.11113 9.79917 3.36808C9.62748 3.62503 9.38345 3.8253 9.09794 3.94356C8.81243 4.06182 8.49827 4.09277 8.19517 4.03248C7.89208 3.97219 7.61367 3.82337 7.39515 3.60485C7.17663 3.38633 7.02781 3.10792 6.96752 2.80483C6.90723 2.50173 6.93818 2.18757 7.05644 1.90206C7.1747 1.61655 7.37497 1.37252 7.63192 1.20083C7.88887 1.02914 8.19097 0.9375 8.5 0.9375C8.9144 0.9375 9.31183 1.10212 9.60485 1.39515C9.89788 1.68817 10.0625 2.0856 10.0625 2.5ZM1.85938 0.9375C1.55034 0.9375 1.24825 1.02914 0.991298 1.20083C0.734346 1.37252 0.534076 1.61655 0.415814 1.90206C0.297552 2.18757 0.266609 2.50173 0.326899 2.80483C0.387188 3.10792 0.536002 3.38633 0.754521 3.60485C0.973041 3.82337 1.25145 3.97219 1.55455 4.03248C1.85764 4.09277 2.17181 4.06182 2.45732 3.94356C2.74283 3.8253 2.98686 3.62503 3.15855 3.36808C3.33024 3.11113 3.42188 2.80903 3.42188 2.5C3.42188 2.0856 3.25726 1.68817 2.96423 1.39515C2.6712 1.10212 2.27378 0.9375 1.85938 0.9375ZM15.1406 0.9375C14.8316 0.9375 14.5295 1.02914 14.2725 1.20083C14.0156 1.37252 13.8153 1.61655 13.6971 1.90206C13.5788 2.18757 13.5479 2.50173 13.6081 2.80483C13.6684 3.10792 13.8173 3.38633 14.0358 3.60485C14.2543 3.82337 14.5327 3.97219 14.8358 4.03248C15.1389 4.09277 15.4531 4.06182 15.7386 3.94356C16.0241 3.8253 16.2681 3.62503 16.4398 3.36808C16.6115 3.11113 16.7031 2.80903 16.7031 2.5C16.7031 2.0856 16.5385 1.68817 16.2455 1.39515C15.9525 1.10212 15.555 0.9375 15.1406 0.9375Z" fill="#fff"/>
-                                </svg>
+
+                                <div className="svg_op_settings p-2 bg-white">
+                                    <svg 
+                                        onClick={() =>
+                                            setTaskDotsOpen((prev) => ({
+                                            ...prev,
+                                            [displayedIndex]: !prev[displayedIndex]
+                                            }))
+                                        }
+                                        width="18" 
+                                        height="4" 
+                                        viewBox="0 0 18 4" 
+                                        fill="none" xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path d="M2.75 3.875C2.25272 3.875 1.77581 3.67746 1.42417 3.32583C1.07254 2.97419 0.875 2.49728 0.875 2C0.875 1.50272 1.07254 1.02581 1.42417 0.674175C1.77581 0.322544 2.25272 0.125 2.75 0.125C3.24728 0.125 3.72419 0.322544 4.07583 0.674175C4.42746 1.02581 4.625 1.50272 4.625 2C4.625 2.49728 4.42746 2.97419 4.07583 3.32583C3.72419 3.67746 3.24728 3.875 2.75 3.875ZM9 3.875C8.50272 3.875 8.02581 3.67746 7.67417 3.32583C7.32254 2.97419 7.125 2.49728 7.125 2C7.125 1.50272 7.32254 1.02581 7.67417 0.674175C8.02581 0.322544 8.50272 0.125 9 0.125C9.49728 0.125 9.97419 0.322544 10.3258 0.674175C10.6775 1.02581 10.875 1.50272 10.875 2C10.875 2.49728 10.6775 2.97419 10.3258 3.32583C9.97419 3.67746 9.49728 3.875 9 3.875ZM15.25 3.875C14.7527 3.875 14.2758 3.67746 13.9242 3.32583C13.5725 2.97419 13.375 2.49728 13.375 2C13.375 1.50272 13.5725 1.02581 13.9242 0.674175C14.2758 0.322544 14.7527 0.125 15.25 0.125C15.7473 0.125 16.2242 0.322544 16.5758 0.674175C16.9275 1.02581 17.125 1.50272 17.125 2C17.125 2.49728 16.9275 2.97419 16.5758 3.32583C16.2242 3.67746 15.7473 3.875 15.25 3.875Z" fill={selectedColor == "" ? `#2f2f2fc3` : bgColor}/>
+                                    </svg>
+
+
+                                </div>                                
 
                                 {taskDotsOpen[displayedIndex] && (
                                 <div className="dropdown-menu flex flex-col">
@@ -539,7 +677,6 @@ const BoardSelect = () => {
                                             alert("You are not allowed to change colors on someone else's board.");
                                             return;
                                         }
-
                                         if (!settings?.isPremiumUser) {
                                             setIsPremiumUser(!settings.isPremiumUser);
                                             return;
@@ -551,7 +688,10 @@ const BoardSelect = () => {
                                     }}>
                                         <div className="ddi py-2 flex items-center justify-between w-full h-full hovers">
                                             <span>Change Color</span>
-                                            <div className="circle bg-gray-500"></div>
+                                            <div 
+                                                className={`circle ${ selectedColor != "" ? "" : "bg-gray-500"}`}
+                                                style={ selectedColor != ""  ? { background: bgColor } : {background: ""} }
+                                            ></div>
                                         </div>
 
                                         {colorDropdownOpen[displayedIndex] && (
@@ -569,28 +709,27 @@ const BoardSelect = () => {
                                                 <span> "Initial" </span>
                                             </div>
                                             <div className="ccsd">
-                                                <div className="custom-colors-grid grid grid-cols-10 gap-1">
-                                                    {customColors.map((colorItem) => (
-                                                    <div
-                                                        key={colorItem.value}
-                                                        className="secdropdown-item hovers flex items-center justify-center"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleChangeCategoryColor(
-                                                                displayedIndex,
-                                                                colorItem.bg,
-                                                                currentCategoryTitle
-                                                            );
-                                                        }}
-                                                    >
-                                                        <span
-                                                        className="circle"
-                                                        style={{ backgroundColor: colorItem.bg }}
-                                                        ></span>
+                                                {colorGroups.map((group, groupIndex) => (
+                                                    <div key={groupIndex} className="color-group">
+                                                        <div className="custom-colors-grid grid grid-cols-10 gap-1">
+                                                            {group.map((colorItem) => (
+                                                            <div
+                                                                key={colorItem.value}
+                                                                className="secdropdown-item hovers flex items-center justify-center"
+                                                                onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                    handleChangeCategoryColor(displayedIndex, colorItem.bg, currentCategoryTitle);
+                                                                }}
+                                                            >
+                                                                <span className="circle" style={{ backgroundColor: colorItem.bg }}></span>
+                                                            </div>
+                                                            ))}
+                                                        </div>
+                                                        <div className="priority-level text-center mt-1">
+                                                            <span>Priority Level {groupIndex + 1}</span>
+                                                        </div>
                                                     </div>
-                                                    ))}
-                                                </div>
-                                                <span> "Custom Color" </span>
+                                                ))}
                                             </div>
                                             <div 
                                                 className="secdropdown-item hovers"
@@ -789,7 +928,6 @@ const BoardSelect = () => {
                             xmlns="http://www.w3.org/2000/svg"
                             onClick={handleCreateCategory}
                         >
-                            <path d="M5.5 6.5H0V5.5H5.5V0H6.5V5.5H12V6.5H6.5V12H5.5V6.5Z" fill="#000"/>
                         </svg>
                     </div>
                     {newCategoryError && (
@@ -801,7 +939,6 @@ const BoardSelect = () => {
                         </div>
                     )}
                 </div>
-
             </div>
         </div>
     );

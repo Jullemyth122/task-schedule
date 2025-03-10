@@ -40,6 +40,8 @@
   --sidenav-slash: #ffffff97;
   --sidenav-ISO: #000;
 
+
+
   --sidenav-hoverBoardTitle: #5cabff97;
 
   /* Board of Dashboard */
@@ -53,10 +55,14 @@
   --bd-cat-l3: #a4910245;
 
   /* Board Select */
-  --bs-bg-light: #d9cd6c71;
-  --bs-bg-dark: #2471e468;
+  --chat-svg: #0059ff;
+  --chat-box: #000;
 
-  --bs-hdl-bg: #78a7ffc7;
+  --bs-bg-light: #b2ad789e;
+  --bs-bg-dark: #639aff76;
+
+  --bs-hdl-bg: #fde155aa;
+  --bs-hdl-bg2: #fde15557;
 
   /* Settings */
   --settings-darkLight: #d1c251;
@@ -129,6 +135,7 @@
   --sidenav-slash: #35353597;
   --sidenav-ISO: #cfcfcf;
 
+
   --sidenav-hoverBoardTitle: #68748097;
 
   /* Board of Dashboard */
@@ -146,6 +153,7 @@
   --bs-bg-dark: #414141df;
 
   --bs-hdl-bg: #b0c2e4c7;
+  --chat-svg: #ffffff;
 
 
   /* Settings */

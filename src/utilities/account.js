@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
+import { arrayUnion, collection, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import { db } from './firebase'; // Ensure that db is imported
 
 // Function to save user data to Firestore
@@ -15,10 +15,12 @@ const saveUserData = async (user, username) => {
             taskLimits:6,
             notifications:[],
             updates:"", 
+            requests:[],
             isPremiumUser:false,
             ratePremium:0,
             PremiumPrice:0,
             invitesEmail:[],
+            role:'user',
             updatedAt: new Date(),
             createdAt: new Date(), // Optional: Add a timestamp
         });
@@ -54,4 +56,17 @@ const updateAccountActivity = async (userId, message) => {
 };
   
 
-export { fetchUserAcc, saveUserData, updateAccountActivity }
+// New function to update the requests field by appending the feedback
+const updateAccountRequests = async (userId, message) => {
+    try {
+        const accountRef = doc(db, "account", userId);
+        await updateDoc(accountRef, {
+            requests: arrayUnion(message),
+        });
+    } catch (error) {
+        console.error("Error updating account requests:", error);
+    }
+};
+
+
+export { fetchUserAcc, saveUserData, updateAccountActivity, updateAccountRequests }

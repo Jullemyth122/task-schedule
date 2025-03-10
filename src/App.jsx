@@ -22,6 +22,7 @@ import BoardSelect from './components/board/BoardSelect'
 import PrivateRoute from './components/PrivateRoute'
 import PublicRoute from './components/PublicRoute'
 import { useAuth } from './context/useAuth'
+import Error from './error/Error'
 
 const router = createBrowserRouter([
   {
@@ -75,8 +76,13 @@ const router = createBrowserRouter([
           </PrivateRoute>
         ),
         errorElement:<Error/>
-      }
-    ]
+      },
+      {
+        path: '*',
+        element: <Error />,
+      },
+    ],
+    
   }
 ])
 function App() {

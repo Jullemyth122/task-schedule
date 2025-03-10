@@ -71,7 +71,7 @@ const DashboardProvider = ({ children }) => {
         
             setBoardAttr({
                 boardTitle: "",
-                boardVisibility: "",
+                boardVisibility: "Private",
                 boardTemplate: "",
                 boardInviteEmail: [],
             });

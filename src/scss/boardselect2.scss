@@ -238,19 +238,16 @@
 
 
             .headline {
-                box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.15);
-                padding: 10px;
-                background: linear-gradient(to right, var(--bs-hdl-bg), var(--bs-hdl-bg2));
 
-                h1 {
-                    color: #000;
-                }
+                padding: 10px;
+                background: var(--bs-hdl-bg);
 
                 .shared-button {
-                    color: #000;
+
                     padding: 8.5px 7px;
                     border: 0px;
                     background: #fff;
+                    color: #000;
                     outline: none;
                     border-radius: 5px;
                     font-size: 15px;
@@ -291,12 +288,9 @@
 
 
                 .task {
-                    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.15);
                     border-radius: 10px;
                     width: var(--task-width);
                     min-height: 80px;
-                    /* background: #353232cf; */
-                    /* background: #2f2f2fc3; */
                     padding: 7.5px;
                     transition: all 0.75s ease-in-out;
 
@@ -307,42 +301,33 @@
                             background: #3683ff83;
                             outline: none;
                             border: 0px;
-                            color: #fff;
+                            color: var(--sidenav-ISO2);
                             box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25);
                             transition: all 0.75s ease-in-out;
 
                             &::placeholder {
-                                color: #fff;
+                                color: var(--sidenav-ISO2);
                             }
                         }
                     }
                 }
 
-                .svg_op_settings {
-                    width: 27.5px;
-                    height: 27.5px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 50%;
-                }
-
                 input {
                     cursor: pointer;
                     width: 100%;
-                    background: #33333354;
+                    background: var(--task-input);
                     outline: none;
-                    color: #fff;
+                    color: var(--sidenav-ISO2);
                     padding: 5px;
-                    border-radius: 5px;
+                    border-radius: 10px;
 
                     &::placeholder {
-                        color: #fff;
+                        color: var(--sidenav-ISO2);
                     }
 
                     &:focus {
                         border: 0.5px solid #fff;
-                        background: #404040;
+                        background: var(--task-input);
                     }
                 }
 
@@ -450,10 +435,11 @@
                     cursor: pointer;
                     border-radius: 7.5px;
                     transition: all 0.75s cubic-bezier(0.39, 0.575, 0.565, 1);
-                    background: #33333354;
+                    background: var(--task-card);
 
                     &:hover {
-                        background: #3737376a;
+                        background: var(--task-cardh);
+
                     }
 
                     h4 {
@@ -468,8 +454,7 @@
 
                     input {
                         border-radius: 7.5px;
-                        background: #404040;
-                        /* color: #ffffff84; */
+                        background: var(--task-input);
                     }
 
                     .btn-create-cd {
@@ -479,15 +464,12 @@
                         gap: 7.5px;
 
                         .btn {
-                            border-radius: 5px;
-                            cursor: pointer;
                             font-size: 13px;
                             padding: 7.5px;
                             transition: all 0.75s cubic-bezier(0.39, 0.575, 0.565, 1);
-                            background: #33333354;
 
                             &:hover {
-                                background: #373737c0;
+                                background: var(--task-card);
                             }
                         }
 
@@ -550,15 +532,15 @@
                     }
 
                     input {
-                        color: #fff;
+                        color: var(--sidenav-ISO2);
                         outline: none;
                         border-radius: 7.5px;
-                        background: #404040;
+                        background: var(--task-input);
                         padding: 5px;
                         cursor: pointer;
 
                         &::placeholder {
-                            color: #fff;
+                            color: var(--sidenav-ISO2);
                         }
                     }
 
