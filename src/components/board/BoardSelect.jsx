@@ -15,6 +15,7 @@ import { useAuth } from "../../context/useAuth";
 import { updateAccountActivity, updateAccountRequests } from "../../utilities/account";
 import { customColors } from "../../utilities/colors";
 import PremiumActivationModal from "./PremiumActivationModal";
+import TaskSelectModal from "./TaskSelectModal";
 
 const BoardSelect = () => {
     const { itemId } = useParams(); // Get board ID from URL
@@ -108,6 +109,8 @@ const BoardSelect = () => {
     const [editedCategoryTitles, setEditedCategoryTitles] = useState({});
     const [expandedTaskItems, setExpandedTaskItems] = useState({});
     const [taskErrors, setTaskErrors] = useState({});
+
+    const [expandedTaskList, setExpandedTaskList] = useState({});
 
     const [taskDotsOpen, setTaskDotsOpen] = useState({});
     const [colorDropdownOpen, setColorDropdownOpen] = useState({});
@@ -418,10 +421,6 @@ const BoardSelect = () => {
         }));
     };
 
-
-
-    
-
     const handleNextTaskCategory = async (categoryIndex, taskIndex) => {
         if (!selectedBoard) return;
         if (categoryIndex >= selectedBoard.taskList.length - 1) return;
@@ -518,7 +517,6 @@ const BoardSelect = () => {
         };
     }, []);
 
-
     
     return (
         <div className="board-select">
@@ -532,6 +530,14 @@ const BoardSelect = () => {
                 />
                 :
                 <></>
+            }
+
+            {expandedTaskList.open && 
+                <TaskSelectModal
+                    taskCategory={expandedTaskList} 
+                    onClose={() => setExpandedTaskList({})} 
+                    selectedImage={selectedImage}
+                />
             }
 
             <div className="req-chat">
@@ -614,7 +620,7 @@ const BoardSelect = () => {
 
                             const bgColor = 
                             !selectedColor
-                              ? "#2f2f2fc3"
+                              ? "#414141df"
                               : selectedColor === "red"
                                 ? "#f87171cd"
                                 : selectedColor === "green"
@@ -622,27 +628,41 @@ const BoardSelect = () => {
                                   : selectedColor;
                           
                     return (
-                        <div className="task" key={displayedIndex} style={{ background:`linear-gradient(to left, #ffffff4a,${bgColor})` }}>
+                        <div className="task" key={displayedIndex} 
+                            // style={{ background:`linear-gradient(to left, #ffffff4a,${bgColor})` }}
+                            style={{ background:`${bgColor}` }}
+                            >
                             <div className="td-1 relative">
-                                <input
-                                    type="text"
-                                    value={currentCategoryTitle}
-                                    onChange={(e) =>
-                                        setEditedCategoryTitles((prev) => ({
-                                            ...prev,
-                                            [displayedIndex]: e.target.value
-                                        }))
-                                    }
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                            handleCategoryTitleUpdate(displayedIndex, currentCategoryTitle);
-                                            e.target.blur(); // This removes focus from the input
+                                <div className="open-up flex items-center justify-center gap-1.5">
+                                    <input
+                                        type="text"
+                                        value={currentCategoryTitle}
+                                        onChange={(e) =>
+                                            setEditedCategoryTitles((prev) => ({
+                                                ...prev,
+                                                [displayedIndex]: e.target.value
+                                            }))
                                         }
-                                    }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                handleCategoryTitleUpdate(displayedIndex, currentCategoryTitle);
+                                                e.target.blur(); // This removes focus from the input
+                                            }
+                                        }}
+                                    />
+                                    <div className={`svg_op_settings p-2 bg-white`}>
+                                        <svg
+                                            onClick={() => 
+                                              setExpandedTaskList({ ...task, id: displayedIndex, open:true })
+                                            }
+                                            width="16" 
+                                            height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M8 11.88L5.76 9.64C5.662 9.54267 5.547 9.491 5.415 9.485C5.283 9.479 5.162 9.531 5.052 9.641C4.942 9.751 4.887 9.86967 4.887 9.997C4.887 10.1243 4.942 10.2433 5.052 10.354L7.435 12.742C7.59633 12.904 7.78467 12.985 8 12.985C8.21533 12.985 8.404 12.904 8.566 12.742L10.954 10.354C11.0513 10.2567 11.103 10.141 11.109 10.007C11.115 9.873 11.0633 9.751 10.954 9.641C10.8447 9.531 10.7257 9.47567 10.597 9.475C10.4683 9.47433 10.3493 9.52967 10.24 9.641L8 11.88ZM8 4.12L10.24 6.36C10.338 6.45733 10.453 6.50933 10.585 6.516C10.717 6.522 10.838 6.47 10.948 6.36C11.0587 6.24933 11.114 6.13033 11.114 6.003C11.114 5.87567 11.0587 5.75667 10.948 5.646L8.566 3.258C8.404 3.096 8.21533 3.015 8 3.015C7.78467 3.015 7.59633 3.096 7.435 3.258L5.046 5.646C4.94867 5.74333 4.89767 5.858 4.893 5.99C4.88833 6.12267 4.94133 6.244 5.052 6.354C5.162 6.464 5.281 6.519 5.409 6.519C5.537 6.519 5.65567 6.464 5.765 6.354L8 4.12ZM1.616 16C1.15533 16 0.771 15.846 0.463 15.538C0.155 15.23 0.000666667 14.8453 0 14.384V1.616C0 1.15533 0.154333 0.771 0.463 0.463C0.771666 0.155 1.156 0.000666667 1.616 0H14.385C14.845 0 15.2293 0.154333 15.538 0.463C15.8467 0.771666 16.0007 1.156 16 1.616V14.385C16 14.845 15.846 15.2293 15.538 15.538C15.23 15.8467 14.8453 16.0007 14.384 16H1.616ZM1.616 15H14.385C14.5383 15 14.6793 14.936 14.808 14.808C14.9367 14.68 15.0007 14.5387 15 14.384V1.616C15 1.462 14.936 1.32067 14.808 1.192C14.68 1.06333 14.5387 0.999333 14.384 1H1.616C1.462 1 1.32067 1.064 1.192 1.192C1.06333 1.32 0.999333 1.46133 1 1.616V14.385C1 14.5383 1.064 14.6793 1.192 14.808C1.32 14.9367 1.461 15.0007 1.615 15" fill={selectedColor == "" ? `#2f2f2fc3` : bgColor}/>
+                                        </svg>
+                                    </div>
+                                </div>
 
-                                />
-
-                                <div className="svg_op_settings p-2 bg-white">
+                                <div className={`svg_op_settings p-2 bg-white`}>
                                     <svg 
                                         onClick={() =>
                                             setTaskDotsOpen((prev) => ({

@@ -1,11 +1,11 @@
 :root {
     --height-original: 200px;
-    --top1:-15%;
+    --top1: -15%;
 }
 
 @media (max-height: 768px) {
     :root {
-        --top1:15%;
+        --top1: 15%;
         --height-original: 100px;
     }
 }
@@ -26,6 +26,7 @@
         display: flex;
         align-items: center;
         justify-content: space-evenly;
+
         h1 {
             // width: ;
             text-align: center;
@@ -127,7 +128,9 @@
             .content1 {
                 padding: 10px;
                 width: 300px;
-                background: #353232b6;
+                /* background: #353232b6; */
+                background: #414141df;
+                // background: linear-gradient(to right, #353232b6, #ffffff73);
 
                 * {
                     color: #fff;
@@ -211,7 +214,8 @@
                 .task-sec {
                     margin: 10px 0px;
                     color: #fff;
-                    background: #353232b6;
+                    /* background: #353232b6; */
+                    background: #414141df;
                     padding: 10px;
                     border-radius: 7.5px;
 

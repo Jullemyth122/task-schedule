@@ -61,8 +61,8 @@
   --bs-bg-light: #b2ad789e;
   --bs-bg-dark: #639aff76;
 
-  --bs-hdl-bg: #fde155aa;
-  --bs-hdl-bg2: #fde15557;
+  --bs-hdl-bg: var(--bg-nav-grd-darkLight);
+  --bs-hdl-bg2: var(--bg-nav-grd-darkDark);
 
   /* Settings */
   --settings-darkLight: #d1c251;
