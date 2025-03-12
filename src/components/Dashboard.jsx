@@ -22,7 +22,7 @@ const Dashboard = ({  }) => {
         IsCreateBoard, setIsCreateBoard,
         boardAttr,setBoardAttr,
         handleCreateBoard,
-        userBoards, successMessage, errorMessage, setErrorMessage
+        userBoards, successMessage, errorMessage, setErrorMessage, setUserBoards, deleteBoard
     } = useDashboardFunc()
 
     const [tempboard,setTempBoard] = useState(null)
@@ -41,6 +41,7 @@ const Dashboard = ({  }) => {
     const OthDropdownRef = useRef(null);
     const othPublicRef = useRef(null);
     const othWorkspaceRef = useRef(null);
+    const [isOpenDeletes, setIsOpenDeletes] = useState({});
 
 
     const toggleWorkspaceDropdown = () => {
@@ -203,6 +204,14 @@ const Dashboard = ({  }) => {
     const paginatedWorkspaceBoards = filteredWorkspaceBoards.slice(currentPage3 * itemsPerPage, (currentPage3 + 1) * itemsPerPage);
     
 
+    const handleDeleteBoard = async (board_id) => {
+        try {
+            await deleteBoard(board_id);
+            setUserBoards(prevBoards => prevBoards.filter(board => board.id !== board_id));
+        } catch (error) {
+            console.error("Error deleting board:", error);
+        }
+    };
 
     return (
         <div className='dashboard flex items-center justify-between'>
@@ -229,7 +238,7 @@ const Dashboard = ({  }) => {
                                 </svg>
                             </div>
 
-                            <div className="dropdown-ulx" ref={workspaceDropdownRef}>
+                            <div className="dropdown-ulx main_ulx" ref={workspaceDropdownRef}>
                                 <p> Table </p>
                                 <p> Calendar </p>
                                 <p> Ganchart </p>
@@ -390,16 +399,73 @@ const Dashboard = ({  }) => {
                                 </div>
                             )}
 
-                            <div className="dropdown-ulx" ref={boardsDropdownRef}>
-                                {paginatedBoards.map((board, index) => (                                     
-                                    <Link 
-                                        key={index}
-                                        to={`/dashboard/${board.id}`}
-                                        className='boardtitles'
-                                        onClick={handleShowBoardClick}
-                                    >
-                                        {board.boardTitle}
-                                    </Link>
+                            <div className="dropdown-ulx main_ulx" ref={boardsDropdownRef}>
+                                {paginatedBoards.map((board, index) => (      
+                                    <div className="temp-link flex items-center justify-between relative">
+                                        <Link 
+                                            key={index}
+                                            to={`/dashboard/${board.id}`}
+                                            className='boardtitles'
+                                            onClick={handleShowBoardClick}
+                                        >
+                                            {board.boardTitle}
+                                        </Link>
+                                        <div 
+                                            className={`svg_drop ${
+                                                isOpenDeletes[board.id]
+                                                ? 'open'
+                                                : 'close'
+                                            }`}
+                                        >
+
+                                            <svg 
+                                                onClick={() => 
+                                                    setIsOpenDeletes((prev) => ({
+                                                        ...prev,
+                                                        [board.id]: !prev[board.id]
+                                                    }))
+                                                }
+                                                className={`slide-del ${
+                                                    isOpenDeletes[board.id] ? 'slide_out' : 'slide_in'
+                                                }`} 
+                                                width="17" height="16" 
+                                                viewBox="0 0 17 16" fill="none" 
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                            <path fillRule="evenodd" clipRule="evenodd" d="M6.44 5.49986L8.871 7.92986L7.811 8.99086L4.629 5.80986L3.922 5.10286C3.82826 5.0091 3.77561 4.88194 3.77561 4.74936C3.77561 4.61678 3.82826 4.48962 3.922 4.39586L7.811 0.505859L8.871 1.56686L6.438 3.99986H11C12.5913 3.99986 14.1174 4.632 15.2426 5.75722C16.3679 6.88244 17 8.40856 17 9.99986C17 11.5912 16.3679 13.1173 15.2426 14.2425C14.1174 15.3677 12.5913 15.9999 11 15.9999H0V14.4999H11C12.1935 14.4999 13.3381 14.0258 14.182 13.1818C15.0259 12.3379 15.5 11.1933 15.5 9.99986C15.5 8.80638 15.0259 7.66179 14.182 6.81788C13.3381 5.97397 12.1935 5.49986 11 5.49986H6.44Z"/>
+                                            </svg>
+
+                                            <svg 
+                                                className={`del-board ${
+                                                    isOpenDeletes[board.id] ? 'slide_in' : 'slide_out'
+                                                }`} 
+                                                onClick={e => handleDeleteBoard(board.id)}
+                                                width="14" height="16" 
+                                                viewBox="0 0 14 16" fill="none" 
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                            <path d="M2.61601 16.0005C2.17134 16.0005 1.79101 15.8421 1.47501 15.5255C1.15901 15.2088 1.00067 14.8291 1.00001 14.3865V2.00047H0.500007C0.358007 2.00047 0.23934 1.95247 0.144007 1.85647C0.0486736 1.76047 0.000673516 1.64147 6.84931e-06 1.49947C-0.000659817 1.35747 0.0473402 1.2388 0.144007 1.14347C0.240674 1.04814 0.35934 1.00047 0.500007 1.00047H4.00001C4.00001 0.793802 4.07667 0.613802 4.23001 0.460469C4.38334 0.307135 4.56334 0.230469 4.77001 0.230469H9.23001C9.43667 0.230469 9.61667 0.307135 9.77001 0.460469C9.92334 0.613802 10 0.793802 10 1.00047H13.5C13.642 1.00047 13.7607 1.04847 13.856 1.14447C13.9513 1.24047 13.9993 1.35947 14 1.50147C14.0007 1.64347 13.9527 1.76214 13.856 1.85747C13.7593 1.9528 13.6407 2.00047 13.5 2.00047H13V14.3855C13 14.8295 12.8417 15.2095 12.525 15.5255C12.2083 15.8415 11.8283 15.9998 11.385 16.0005H2.61601ZM12 2.00047H2.00001V14.3855C2.00001 14.5648 2.05767 14.7121 2.17301 14.8275C2.28834 14.9428 2.43601 15.0005 2.61601 15.0005H11.385C11.5643 15.0005 11.7117 14.9428 11.827 14.8275C11.9423 14.7121 12 14.5648 12 14.3855V2.00047ZM5.30801 13.0005C5.45001 13.0005 5.56901 12.9525 5.66501 12.8565C5.76101 12.7605 5.80867 12.6418 5.80801 12.5005V4.50047C5.80801 4.35847 5.76001 4.2398 5.66401 4.14447C5.56801 4.04914 5.44901 4.00114 5.30701 4.00047C5.16501 3.9998 5.04634 4.0478 4.95101 4.14447C4.85567 4.24114 4.80801 4.3598 4.80801 4.50047V12.5005C4.80801 12.6425 4.85601 12.7611 4.95201 12.8565C5.04801 12.9525 5.16667 13.0005 5.30801 13.0005ZM8.69301 13.0005C8.83501 13.0005 8.95367 12.9525 9.04901 12.8565C9.14434 12.7605 9.19201 12.6418 9.19201 12.5005V4.50047C9.19201 4.35847 9.14401 4.2398 9.04801 4.14447C8.95201 4.04847 8.83334 4.00047 8.69201 4.00047C8.55001 4.00047 8.43101 4.04847 8.33501 4.14447C8.23901 4.24047 8.19134 4.35914 8.19201 4.50047V12.5005C8.19201 12.6425 8.24001 12.7611 8.33601 12.8565C8.43201 12.9518 8.55101 12.9998 8.69301 13.0005Z" fill="black"/>
+                                            </svg>
+
+                                            <svg 
+                                                onClick={() => 
+                                                    setIsOpenDeletes((prev) => ({
+                                                        ...prev,
+                                                        [board.id]: !prev[board.id]
+                                                    }))
+                                                }
+                                                className={`del-slide ${
+                                                    isOpenDeletes[board.id] ? 'slide_in delay' : 'slide_out'
+                                                }`} 
+                                                width="17" height="16" 
+                                                viewBox="0 0 17 16" fill="none" 
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path fill-rule="evenodd" clip-rule="evenodd" d="M10.56 5.49986L8.129 7.92986L9.189 8.99086L12.371 5.80986L13.078 5.10286C13.1717 5.0091 13.2244 4.88194 13.2244 4.74936C13.2244 4.61678 13.1717 4.48962 13.078 4.39586L9.189 0.505859L8.129 1.56686L10.562 3.99986H6C4.4087 3.99986 2.88258 4.632 1.75736 5.75722C0.63214 6.88244 0 8.40856 0 9.99986C0 11.5912 0.63214 13.1173 1.75736 14.2425C2.88258 15.3677 4.4087 15.9999 6 15.9999H17V14.4999H6C4.80653 14.4999 3.66193 14.0258 2.81802 13.1818C1.97411 12.3379 1.5 11.1933 1.5 9.99986C1.5 8.80638 1.97411 7.66179 2.81802 6.81788C3.66193 5.97397 4.80653 5.49986 6 5.49986H10.56Z" fill="black"/>
+                                            </svg>
+
+                                        </div>
+                                    </div>                               
                                 ))}
 
                                 <div className="pagination-controls flex justify-between mt-2">
@@ -445,10 +511,10 @@ const Dashboard = ({  }) => {
                             </div>
                             
                             <div className="fix-oth">
-                                <div className="dropdown-ulx oth" ref={OthDropdownRef}>
+                                <div className="dropdown-ulx main_ulx oth" ref={OthDropdownRef}>
                                     <div className="public-dd">
                                         <h3 onClick={toggleOthPublic} className='cursor-pointer'> Public Board </h3>
-                                        <div className="public-list dropdown-ulx" ref={othPublicRef}>
+                                        <div className="public-list dropdown-ulx main_ulx" ref={othPublicRef}>
                                             {paginatedWorldBoards.map((board, index) => (                                     
                                                 <Link 
                                                     key={index}
@@ -484,7 +550,7 @@ const Dashboard = ({  }) => {
                                     </div>
                                     <div className="workspace-dd">
                                         <h3 onClick={toggleOthWorkspace} className='cursor-pointer'> Workspace Board </h3>
-                                        <div className="workspace-list dropdown-ulx" ref={othWorkspaceRef}>
+                                        <div className="workspace-list dropdown-ulx main_ulx" ref={othWorkspaceRef}>
                                             {paginatedWorkspaceBoards.map((board, index) => (                                     
                                                 <Link 
                                                     key={index}

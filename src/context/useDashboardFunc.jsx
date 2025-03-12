@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { saveUserBoardData } from '../utilities/board';
 import { fetchUserBoards } from '../utilities/board'; // Import fetchUserBoards function
 import { updateAccountActivity } from '../utilities/account';
+import { deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../utilities/firebase';
 
 const DashboardFuncContext = createContext();
 
@@ -81,7 +83,15 @@ const DashboardProvider = ({ children }) => {
         }
     };
       
-    
+    const deleteBoard = async (board_id) => {
+        try {
+            await deleteDoc(doc(db, "boards", board_id));
+            console.log("Board deleted successfully");
+        } catch (error) {
+            console.error("Error deleting board: ", error);
+        }
+    };
+
     
 
       
@@ -91,7 +101,7 @@ const DashboardProvider = ({ children }) => {
         boardAttr, setBoardAttr,
         userBoards, setUserBoards, // Pass the boards to the context
         handleCreateBoard, successMessage, 
-        errorMessage
+        errorMessage, deleteBoard
     };
 
     return (

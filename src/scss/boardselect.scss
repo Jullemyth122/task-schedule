@@ -389,6 +389,7 @@
                 position: fixed;
                 bottom: 35px;
                 right: 35px;
+                z-index: 10000;
 
                 .chat-logo {
                     z-index: 100;
@@ -685,12 +686,10 @@
                         }
                     }
 
-                    .color-area {
-                        .circle {
-                            width: 13px;
-                            height: 13px;
-                            border-radius: 50%;
-                        }
+                    .circle {
+                        width: 13px;
+                        height: 13px;
+                        border-radius: 50%;
                     }
                 }
 

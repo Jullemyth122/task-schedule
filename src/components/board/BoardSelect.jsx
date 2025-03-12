@@ -141,10 +141,8 @@ const BoardSelect = () => {
     };
 
     function getPriorityFromColor(color) {
-        // Find the index of the color in the customColors array
         const index = customColors.findIndex(item => item.bg === color);
         if (index === -1) return null;
-        // Each group has 10 colors.
         return {
             level: Math.floor(index / 10) + 1, // Priority level 1-5
             shade: index % 10, // 0 (lightest) to 9 (darkest)
@@ -155,12 +153,10 @@ const BoardSelect = () => {
     function getSortKey(task) {
         if (task.color === "red") return -1000;       // Always at the very top.
         if (task.color === "green") return 1000;        // Always at the very bottom.
-        // For default tasks (empty string), assign a key that is lower than any custom color.
         if (!task.color || task.color.trim() === "") return 0;
         
         const prio = getPriorityFromColor(task.color);
-        // If a custom color is assigned, assume the lowest possible custom key is 10
-        // (because for level 1, shade 0, level*10+shade = 1*10+0 = 10)
+
         return prio ? prio.level * 10 + prio.shade : 0;
     }
 
@@ -517,6 +513,7 @@ const BoardSelect = () => {
         };
     }, []);
 
+    console.log(settings)
     
     return (
         <div className="board-select">
@@ -653,7 +650,7 @@ const BoardSelect = () => {
                                     <div className={`svg_op_settings p-2 bg-white`}>
                                         <svg
                                             onClick={() => 
-                                              setExpandedTaskList({ ...task, id: displayedIndex, open:true })
+                                              setExpandedTaskList({ ...task, displayTask:displayTaskItems , id: displayedIndex, open:true })
                                             }
                                             width="16" 
                                             height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -777,17 +774,17 @@ const BoardSelect = () => {
                                     <div className="dropdown-item flex items-center justify-between">
                                         <span> Link Status </span>
                                         {settings?.islinks ?  
-                                            <div className="circle bg-green-500"></div>
+                                            <span className="circle bg-green-500"></span>
                                             :
-                                            <div className="circle bg-red-500"></div>
+                                            <span className="circle bg-red-500"></span>
                                         }
                                     </div>
                                     <div className="dropdown-item flex items-center justify-between">
                                         <span> Tagging Status </span>
                                         {settings?.istagging ?
-                                            <div className="circle bg-green-500"></div>
+                                            <span className="circle bg-green-500"></span>
                                             :
-                                            <div className="circle bg-red-500"></div>
+                                            <span className="circle bg-red-500"></span>
                                         }
                                     </div>
                                 </div>

@@ -22,13 +22,19 @@ const TaskSelectModal = ({ taskCategory, onClose, selectedImage }) => {
                             <button>Watching</button>
                         </div>
                         <div className="section description">
-                            <h3>Description</h3>
+                            <h3> Cards </h3>
                             <ul>
-                                <li> Description 1 </li>
-                                <li> Description 2 </li>
-                                <li> Description 3 </li>
+                                {taskCategory.displayTask?.length > 0 ? taskCategory.displayTask?.map((taskItem, i) => {
+                                    return(
+                                        <li key={i}> {taskItem} </li>
+                                    )
+                                }) :
+                                    <li>
+                                        No Cards Found
+                                    </li>
+                                }
                             </ul>
-                            <button>Edit</button>
+                            {/* <button>Edit</button> */}
                         </div>
 
                         <div className="section activity">
