@@ -512,8 +512,6 @@ const BoardSelect = () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
-
-    console.log(settings)
     
     return (
         <div className="board-select">

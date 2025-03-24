@@ -13,23 +13,24 @@ const SearchProvider = ({ children }) => {
 
     const [search, setSearch] = useState("");
     const [filteredBoards, setFilteredBoards] = useState([]);
+    const boardsForUser = userBoards.filter(board => board.email === currentUser?.email);
 
     // Initialize BST
     const bst = new BST();
 
     useEffect(() => {
         // Filter data for the current user
-        const boardsForUser = userBoards.filter(board => board.email === currentUser?.email);
         
         // Insert all data into BST
         boardsForUser.forEach(board => bst.insert(board.boardTitle.toLowerCase(), board));
 
         const delayDebounce = setTimeout(() => {
             if (search.trim() === "") {
-                setFilteredBoards(boardsForUser);
+                return setFilteredBoards(boardsForUser);
             } else {
                 const filtered = bst.search(search);
-                setFilteredBoards(filtered);
+                console.log(filtered);
+                return setFilteredBoards(filtered);
             }
         }, 300); // Debounce to optimize performance
 

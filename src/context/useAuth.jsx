@@ -103,6 +103,7 @@ export const AuthProvider = ({ children }) => {
     const handleGoogleLogin = async (e) => {
         e.preventDefault();
         try {
+            
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 

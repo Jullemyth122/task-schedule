@@ -65,16 +65,37 @@ const Board = ({ tempboard, setTempBoard }) => {
         <div className="board-list">
             <div className="category">
                 <div className="selections flex items-center justify-between gap-2">
-                    <select name="" id="">
+                    <select name="" id=""
+                        // value={}
+                        onChange={e => setSearch(e.target.value)}
+                    >
                         <option value=""> Most Recently Active </option>
-                        {filteredBoards.map((board, index) => (
-                            <option value={board.boardTitle} key={index}>
-                            {board.boardTitle}
-                            </option>
-                        ))}
+                        {filteredBoards
+                            .filter(board => {
+                                // If board.createdAt is a Firestore Timestamp, convert it to a JS Date
+                                const boardDate = board.createdAt.toDate
+                                    ? board.createdAt.toDate()
+                                    : new Date(board.createdAt);
+                                const threeDaysAgo = new Date();
+                                threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                                // Return true if the board was created within the last 3 days
+                                return boardDate >= threeDaysAgo;
+                            })
+                            .map((board, index) => (
+                                <option value={board.boardTitle} key={index}>
+                                    {board.boardTitle}
+                                </option>
+                            ))
+                        }
                     </select>
-                    <select name="" id="">
-                        <option value=""> Category Options </option>
+                    <select 
+                        name="" id="" 
+                        // onChange={e => setSearch(e.target.value)}
+                    >
+                        <option value=""> All Visibility Type </option>
+                        <option value="Private"> Private </option>
+                        <option value="Public"> Public </option>
+                        <option value="Workspace"> Workspace </option>
                     </select>
                 </div>
                 <div className="search-boards">
@@ -98,10 +119,10 @@ const Board = ({ tempboard, setTempBoard }) => {
                     </div>
                     ))
                 ) : (
-                    <p>No matching boards found.</p>
+                    <p className='work-p'>No matching boards found.</p>
                 )}
             </div>
-
+            <hr/>
             <h5 className='work-title'>Workspace Connections</h5>
             <div className="list-items">
                 {connectedBoards.length > 0 ? (
@@ -114,7 +135,7 @@ const Board = ({ tempboard, setTempBoard }) => {
                     </div>
                     ))
                 ) : (
-                    <p className='work-p'>No connected boards found.</p>
+                    <p className='work-p'>No co-workspace boards found.</p>
                 )}
                 </div>
             </div>

@@ -17,6 +17,7 @@ const saveUserBoardData = async (user, board) => {
                 { title: "Done", tasks: [], taggings: [], links: [], color:"" }
             ],
             createdAt: new Date(),
+            updatedAt: new Date()
         });
         console.log("User board saved to Firestore");
     } catch (error) {

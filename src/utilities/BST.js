@@ -37,22 +37,24 @@ class BST {
     }
 
     search(query) {
-        let current = this.root;
-        let results = [];
         query = query.toLowerCase();
+        const results = [];
 
-        while (current) {
-            if (current.key.includes(query)) {
-                results.push(current.board);
+        function traverse(node) {
+            if (!node) return;
+            // Check the current node
+            if (node.key.includes(query)) {
+            results.push(node.board);
             }
-            if (query < current.key) {
-                current = current.left;
-            } else {
-                current = current.right;
-            }
+            // Recursively traverse the left and right subtrees
+            traverse(node.left);
+            traverse(node.right);
         }
+        
+        traverse(this.root);
         return results;
     }
+
 }
 
 export default BST;

@@ -401,14 +401,17 @@ const Dashboard = ({  }) => {
 
                             <div className="dropdown-ulx main_ulx" ref={boardsDropdownRef}>
                                 {paginatedBoards.map((board, index) => (      
-                                    <div className="temp-link flex items-center justify-between relative">
+                                    <div className="temp-link flex items-center justify-between relative" key={index}>
                                         <Link 
                                             key={index}
                                             to={`/dashboard/${board.id}`}
                                             className='boardtitles'
                                             onClick={handleShowBoardClick}
                                         >
-                                            {board.boardTitle}
+                                        {board.boardTitle.length > 15 
+                                            ? `${board.boardTitle.substring(0, 15)}...` 
+                                            : board.boardTitle}
+                                            {/* {board.boardTitle} */}
                                         </Link>
                                         <div 
                                             className={`svg_drop ${
@@ -417,7 +420,6 @@ const Dashboard = ({  }) => {
                                                 : 'close'
                                             }`}
                                         >
-
                                             <svg 
                                                 onClick={() => 
                                                     setIsOpenDeletes((prev) => ({
@@ -461,7 +463,7 @@ const Dashboard = ({  }) => {
                                                 viewBox="0 0 17 16" fill="none" 
                                                 xmlns="http://www.w3.org/2000/svg"
                                             >
-                                                <path fill-rule="evenodd" clip-rule="evenodd" d="M10.56 5.49986L8.129 7.92986L9.189 8.99086L12.371 5.80986L13.078 5.10286C13.1717 5.0091 13.2244 4.88194 13.2244 4.74936C13.2244 4.61678 13.1717 4.48962 13.078 4.39586L9.189 0.505859L8.129 1.56686L10.562 3.99986H6C4.4087 3.99986 2.88258 4.632 1.75736 5.75722C0.63214 6.88244 0 8.40856 0 9.99986C0 11.5912 0.63214 13.1173 1.75736 14.2425C2.88258 15.3677 4.4087 15.9999 6 15.9999H17V14.4999H6C4.80653 14.4999 3.66193 14.0258 2.81802 13.1818C1.97411 12.3379 1.5 11.1933 1.5 9.99986C1.5 8.80638 1.97411 7.66179 2.81802 6.81788C3.66193 5.97397 4.80653 5.49986 6 5.49986H10.56Z" fill="black"/>
+                                                <path fillRule="evenodd" clipRule="evenodd" d="M10.56 5.49986L8.129 7.92986L9.189 8.99086L12.371 5.80986L13.078 5.10286C13.1717 5.0091 13.2244 4.88194 13.2244 4.74936C13.2244 4.61678 13.1717 4.48962 13.078 4.39586L9.189 0.505859L8.129 1.56686L10.562 3.99986H6C4.4087 3.99986 2.88258 4.632 1.75736 5.75722C0.63214 6.88244 0 8.40856 0 9.99986C0 11.5912 0.63214 13.1173 1.75736 14.2425C2.88258 15.3677 4.4087 15.9999 6 15.9999H17V14.4999H6C4.80653 14.4999 3.66193 14.0258 2.81802 13.1818C1.97411 12.3379 1.5 11.1933 1.5 9.99986C1.5 8.80638 1.97411 7.66179 2.81802 6.81788C3.66193 5.97397 4.80653 5.49986 6 5.49986H10.56Z" fill="black"/>
                                             </svg>
 
                                         </div>

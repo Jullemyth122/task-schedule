@@ -11,10 +11,7 @@ const Navigation = () => {
 
     const [notifications, setNotifications] = useState([]);
     const [showNotifs, setShowNotifs] = useState(false);
-    const navigate = useNavigate();
-
-    console.log(currentUser)
-  
+    const navigate = useNavigate();  
   
     useEffect(() => {
         if (currentUser) {
@@ -99,7 +96,7 @@ const Navigation = () => {
                                 Notifications
                             </h5>
                             {showNotifs && (
-                                <div className="notif-lists">
+                                <div className="notif-lists" onMouseLeave={e => setShowNotifs(false)}>
                                     {notifications.length > 0 ? (
                                         notifications.map((notif, idx) => (
                                             <div key={idx} className="notification-item">
@@ -124,14 +121,13 @@ const Navigation = () => {
                             )}
                         </div>
                             <h5 className='text-white'>
-                                {currentUser.displayName && currentUser.displayName.length > 6 
-                                    ? `${currentUser.displayName.substring(0, 6)}...` 
+                                {currentUser.displayName && currentUser.displayName.length > 15 
+                                    ? `${currentUser.displayName.substring(0, 15)}...` 
                                     : currentUser.displayName || currentUser.email}
                             </h5>
                             <button onClick={handleLogout} className="text-white">Logout</button>
                         </>
                      : 
-                        // If currentUser is not logged in, show the Signup link
                         <Link className='nav-link' to={'/signup'}>
                             <h5 className='normal text-white'> Signup </h5>
                         </Link>

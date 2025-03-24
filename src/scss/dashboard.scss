@@ -59,6 +59,8 @@
             }
 
             .sidenav-ulx {
+                /* height: 100%; */
+
                 .drop-svg {
                     cursor: pointer;
                 }
@@ -382,6 +384,9 @@
 
 
                     &.main_ulx {
+                        /* height: 100%; */
+                        /* transition: all 0.75s cubic-bezier(0.785, 0.135, 0.15, 0.86); */
+
                         .temp-link {
                             overflow: hidden;
                             position: relative;
@@ -489,6 +494,31 @@
                 max-height: 300px;
                 /* padding: 10px; */
                 overflow-y: auto;
+
+                /* Custom Scrollbar for Webkit Browsers */
+                &::-webkit-scrollbar {
+                    width: 10px;
+                    /* Width of the scrollbar */
+                }
+
+                &::-webkit-scrollbar-track {
+                    border-radius: 8px;
+                    /* Rounded edges for the scrollbar track */
+                    background: #918e46;
+                    /* Background of the scrollbar track */
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    border-radius: 8px;
+                    /* Rounded edges for the scrollbar track */
+                    background: white;
+                    /* Color of the scrollbar thumb */
+                }
+
+                &::-webkit-scrollbar-thumb:hover {
+                    background: #9acfff;
+                    /* Color of the scrollbar thumb on hover */
+                }
 
                 @media (max-height:768px) {
                     max-height: 160px;

@@ -28,10 +28,14 @@ const InviteWorkspace = ({ onClose }) => {
         try {
             const accounts = await fetchUserAcc();
             // Exclude the current user's account from the search results
-            const matchingUsers = accounts.filter(acc =>
-                acc.email.toLowerCase().includes(searchEmail.toLowerCase()) &&
-                acc.email.toLowerCase() !== currentUser.email.toLowerCase()
+            const matchingUsers = accounts.filter(acc => {
+                const emailPrefix = acc.email.toLowerCase().split('@')[0];
+                const searchPrefix = searchEmail.toLowerCase().split('@')[0];
+                return emailPrefix.includes(searchPrefix) &&
+                        acc.email.toLowerCase() !== currentUser.email.toLowerCase();
+                }
             );
+
             if (matchingUsers.length > 0) {
                 setFoundUsers(matchingUsers);
             } else {
@@ -90,7 +94,7 @@ const InviteWorkspace = ({ onClose }) => {
                     placeholder="Enter email to search..."
                     value={searchEmail}
                     onChange={(e) => setSearchEmail(e.target.value)}
-                    required
+                    // required
                 />
                 <button type="submit" disabled={loading}>Search</button>
             </form>
