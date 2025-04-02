@@ -9,15 +9,17 @@ import { fetchConnectedBoards } from '../../utilities/board'; // NEW helper
 import '../../scss/boardCompo.scss';
 
 const Board = ({ tempboard, setTempBoard }) => {
+
     const images = [
-        '/img/s1.jpg', '/img/s2.jpg', 
-        '/img/s3.jpg', '/img/s4.jpg', '/img/s5.jpg'
+        './img/s1.jpg', './img/s2.jpg', 
+        './img/s3.jpg', './img/s4.jpg', './img/s5.jpg'
     ];
 
     const { search, setSearch, filteredBoards } = useSearch();
     const { currentUser, accBST } = useAuth(); // Get accBST from auth context
 
     const [selectedImages, setSelectedImages] = useState([]);
+    const [workselectedImages, setWorkSelectedImages] = useState([]);
     const [showInviteDropdown, setShowInviteDropdown] = useState(false);
     const [connectedBoards, setConnectedBoards] = useState([]);
 
@@ -30,6 +32,15 @@ const Board = ({ tempboard, setTempBoard }) => {
         setSelectedImages(newSelectedImages);
         }
     }, [filteredBoards]);
+
+    useEffect(() => {
+        if (connectedBoards.length > 0) {
+        const newSelectedImages = connectedBoards.map(() =>
+            images[Math.floor(Math.random() * images.length)]
+        );
+        setWorkSelectedImages(newSelectedImages);
+        }
+    }, [connectedBoards]);
 
     useEffect(() => {
         // accBST is the current user's account document data
@@ -129,7 +140,7 @@ const Board = ({ tempboard, setTempBoard }) => {
                     connectedBoards.map((board, index) => (
                     <div key={board.id || index} className="boarding-shift flex items-center justify-center relative">
                         <Link to={`/dashboard/${board?.id}`} className="board-item">
-                        <img src={selectedImages[index]} alt="Thumbnail" className="bg-img-title" />
+                        <img src={workselectedImages[index]} alt="Thumbnail" className="bg-img-title" />
                             <p className='work-p'>{board.boardTitle}</p>
                         </Link>
                     </div>

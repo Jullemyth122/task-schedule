@@ -23,6 +23,7 @@ import PrivateRoute from './components/PrivateRoute'
 import PublicRoute from './components/PublicRoute'
 import { useAuth } from './context/useAuth'
 import Error from './error/Error'
+import { PreferencesProvider } from './context/usePreferences'
 
 const router = createBrowserRouter([
   {
@@ -86,16 +87,12 @@ const router = createBrowserRouter([
   }
 ])
 function App() {
-  const { accBST } = useAuth();
 
-  useEffect(() => {
-    // If the theme is saved in accBST, update the document attribute
-    if (accBST && accBST.theme) {
-      document.documentElement.setAttribute('data-theme', accBST.theme.toLowerCase());
-    }
-  }, [accBST]);
-
-  return <RouterProvider router={router} />
+  return(
+    <PreferencesProvider>
+      <RouterProvider router={router} />
+    </PreferencesProvider>
+  )
 }
 
 export default App

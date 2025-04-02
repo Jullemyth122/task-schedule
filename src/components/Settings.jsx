@@ -5,12 +5,14 @@ import { db } from '../utilities/firebase';
 import { useAuth } from '../context/useAuth';
 import { useTranslation } from 'react-i18next';
 import '../scss/settings.scss';
+import { usePreferences } from '../context/usePreferences';
 
 const Settings = () => {
     const { t, i18n } = useTranslation();
     const { currentUser, accBST } = useAuth();
     const [selectedTab, setSelectedTab] = useState('account');
     const [message, setMessage] = useState('');
+    const { preferences, setPreferences } = usePreferences();
 
     const [profile, setProfile] = useState({
         displayName: currentUser?.displayName || '',
@@ -19,14 +21,9 @@ const Settings = () => {
 
     const [newPassword, setNewPassword] = useState('');
 
-    const [preferences, setPreferences] = useState({
-        theme: accBST?.theme || 'Light',
-        language: accBST?.language || 'en',
-    });
-
     useEffect(() => {
         if (accBST) {
-          setPreferences((prev) => ({ ...prev, theme: accBST.theme, language: accBST.language }));
+            setPreferences((prev) => ({ ...prev, theme: accBST.theme, language: accBST.language }));
         }
     }, [accBST]);
 
